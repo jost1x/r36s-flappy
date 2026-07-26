@@ -1,4 +1,4 @@
-.PHONY: all build debug release clean install deploy help
+.PHONY: all build debug release clean install deploy hooks help
 
 NATIVE_ARCH := $(shell uname -m)
 NATIVE_BIN := bin/$(NATIVE_ARCH)/r36s-hello
@@ -19,6 +19,10 @@ install:
 	@echo "Instalando dependencias..."
 	sudo apt update
 	sudo apt install -y build-essential cmake git libsdl2-dev libsdl2-ttf-dev fonts-dejavu-core
+
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "✓ Hooks de Git activados para este repositorio"
 
 build:
 	@echo "Compilando (Debug)..."

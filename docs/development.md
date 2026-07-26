@@ -9,6 +9,16 @@
 
 LVGL 9.2.2 se descarga automáticamente durante la configuración de CMake.
 
+## Hooks de Git
+
+Activa los hooks versionados una vez después de clonar el repositorio:
+
+```sh
+make -f Makefile-cpp hooks
+```
+
+El hook `pre-commit` comprueba los espacios y conflictos de formato en los cambios preparados. El hook `pre-push` configura la build, compila con un único trabajo y ejecuta `ctest`; cancela el push si alguna comprobación falla.
+
 ## Configuración con vcpkg
 
 ```sh
