@@ -20,12 +20,14 @@ RUN sed -i \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-COPY include ./include
-COPY src ./src
+ARG LVGL_VERSION=v9.2.2
+# Only the LVGL configuration participates in this layer. Application source
+# changes below therefore reuse the cached LVGL checkout and static library.
+COPY include/lv_conf.h ./include/lv_conf.h
 
 # The vcpkg registry used by the project has no LVGL port. Build the pinned
 # upstream release as ARM64, using this project's lv_conf.h configuration.
-RUN git clone --depth 1 --branch v9.2.2 https://github.com/lvgl/lvgl.git /opt/lvgl \
+RUN git clone --depth 1 --branch "$LVGL_VERSION" https://github.com/lvgl/lvgl.git /opt/lvgl \
     && mkdir -p /tmp/lvgl-objects \
     && cd /opt/lvgl \
     && for source in $(find src -name '*.c'); do \
@@ -35,6 +37,11 @@ RUN git clone --depth 1 --branch v9.2.2 https://github.com/lvgl/lvgl.git /opt/lv
            -I/src/include -I/opt/lvgl -c "$source" -o "$object"; \
        done \
     && aarch64-linux-gnu-ar rcs /opt/liblvgl.a $(find /tmp/lvgl-objects -name '*.o')
+
+# Copy the application only after the expensive LVGL layer so normal UI and
+# behaviour changes do not trigger another LVGL checkout or rebuild.
+COPY include ./include
+COPY src ./src
 
 RUN mkdir -p /out \
     && aarch64-linux-gnu-gcc -std=c17 -O2 -DLV_CONF_INCLUDE_SIMPLE -DLV_LVGL_H_INCLUDE_SIMPLE -Iinclude -I/opt/lvgl \
