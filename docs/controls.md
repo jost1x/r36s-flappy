@@ -9,3 +9,5 @@
 | Salir | Escape | Back o Start |
 
 Cuando el selector está abierto, arriba y abajo recorren la lista; confirmar aplica la ciudad seleccionada.
+
+En la R36S, SDL etiqueta el botón físico **A** como `BUTTON_B` y el físico **B** como `BUTTON_A`; `InputManager` adapta esa diferencia para conservar las acciones indicadas en esta tabla.

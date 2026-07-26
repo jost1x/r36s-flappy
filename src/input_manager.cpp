@@ -112,10 +112,12 @@ Action InputManager::handleControllerButtonEvent(const SDL_ControllerButtonEvent
         case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
         case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
             return Action::Right;
-        case SDL_CONTROLLER_BUTTON_A:
+        // The R36S uses the Nintendo-style face-button layout: its physical
+        // A button is reported by SDL as BUTTON_B and its B as BUTTON_A.
+        case SDL_CONTROLLER_BUTTON_B:
         case SDL_CONTROLLER_BUTTON_START:
             return Action::Confirm;
-        case SDL_CONTROLLER_BUTTON_B:
+        case SDL_CONTROLLER_BUTTON_A:
         case SDL_CONTROLLER_BUTTON_BACK:
             return Action::Back;
         default:
