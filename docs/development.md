@@ -19,6 +19,12 @@ make -f Makefile-cpp hooks
 
 El hook `pre-commit` comprueba los espacios y conflictos de formato en los cambios preparados. El hook `pre-push` configura la build, compila con un único trabajo y ejecuta `ctest`; cancela el push si alguna comprobación falla.
 
+Para ejecutar la validación de `pre-commit` manualmente:
+
+```sh
+make -f Makefile-cpp pre-commit
+```
+
 ## Configuración con vcpkg
 
 ```sh

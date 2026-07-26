@@ -1,4 +1,4 @@
-.PHONY: all build debug release clean install deploy hooks help
+.PHONY: all build debug release clean install deploy hooks pre-commit help
 
 NATIVE_ARCH := $(shell uname -m)
 NATIVE_BIN := bin/$(NATIVE_ARCH)/r36s-hello
@@ -23,6 +23,9 @@ install:
 hooks:
 	@git config core.hooksPath .githooks
 	@echo "✓ Hooks de Git activados para este repositorio"
+
+pre-commit:
+	@.githooks/pre-commit
 
 build:
 	@echo "Compilando (Debug)..."
