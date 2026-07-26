@@ -11,3 +11,5 @@
 Cuando el selector está abierto, arriba y abajo recorren la lista; confirmar aplica la ciudad seleccionada.
 
 En la R36S, SDL etiqueta el botón físico **A** como `BUTTON_B` y el físico **B** como `BUTTON_A`; `InputManager` adapta esa diferencia para conservar las acciones indicadas en esta tabla.
+
+Los sticks tienen una zona muerta amplia y el eje dominante decide la dirección. Tras el primer movimiento, la repetición espera 320 ms y continúa cada 140 ms mientras se mantenga la inclinación, evitando cambios bruscos por diagonales o pequeñas oscilaciones.

@@ -1,4 +1,6 @@
 #include "../include/input_manager.h"
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
 
 InputManager::InputManager() {}
@@ -126,23 +128,49 @@ Action InputManager::handleControllerButtonEvent(const SDL_ControllerButtonEvent
 }
 
 Action InputManager::handleControllerAxisEvent(const SDL_ControllerAxisEvent& axis) {
-    const Sint16 AXIS_THRESHOLD = 20000;
+    constexpr Sint16 kEngageThreshold = 26000;
+    constexpr Sint16 kReleaseThreshold = 16000;
+    constexpr Uint64 kInitialRepeatDelayMs = 320;
+    constexpr Uint64 kRepeatIntervalMs = 140;
 
-    if (axis.value < -AXIS_THRESHOLD) {
-        if (axis.axis == SDL_CONTROLLER_AXIS_LEFTX || axis.axis == SDL_CONTROLLER_AXIS_RIGHTX) {
-            return Action::Left;
-        } else if (axis.axis == SDL_CONTROLLER_AXIS_LEFTY || axis.axis == SDL_CONTROLLER_AXIS_RIGHTY) {
-            return Action::Up;
-        }
-    } else if (axis.value > AXIS_THRESHOLD) {
-        if (axis.axis == SDL_CONTROLLER_AXIS_LEFTX || axis.axis == SDL_CONTROLLER_AXIS_RIGHTX) {
-            return Action::Right;
-        } else if (axis.axis == SDL_CONTROLLER_AXIS_LEFTY || axis.axis == SDL_CONTROLLER_AXIS_RIGHTY) {
-            return Action::Down;
-        }
+    const bool leftStick = axis.axis == SDL_CONTROLLER_AXIS_LEFTX || axis.axis == SDL_CONTROLLER_AXIS_LEFTY;
+    const bool rightStick = axis.axis == SDL_CONTROLLER_AXIS_RIGHTX || axis.axis == SDL_CONTROLLER_AXIS_RIGHTY;
+    if ((!leftStick && !rightStick) || !controller) return Action::None;
+
+    const size_t stickIndex = leftStick ? 0 : 1;
+    const auto horizontalAxis = leftStick ? SDL_CONTROLLER_AXIS_LEFTX : SDL_CONTROLLER_AXIS_RIGHTX;
+    const auto verticalAxis = leftStick ? SDL_CONTROLLER_AXIS_LEFTY : SDL_CONTROLLER_AXIS_RIGHTY;
+    const int horizontal = SDL_GameControllerGetAxis(controller, horizontalAxis);
+    const int vertical = SDL_GameControllerGetAxis(controller, verticalAxis);
+    const int horizontalMagnitude = std::abs(horizontal);
+    const int verticalMagnitude = std::abs(vertical);
+    const int magnitude = std::max(horizontalMagnitude, verticalMagnitude);
+    auto& state = stickStates_[stickIndex];
+
+    // A separate release threshold prevents a stick resting near an edge from
+    // repeatedly firing while the player returns it to the centre.
+    if (magnitude < kReleaseThreshold) {
+        state.activeAction = Action::None;
+        state.nextRepeatAt = 0;
+        return Action::None;
     }
+    if (magnitude < kEngageThreshold) return Action::None;
 
-    return Action::None;
+    // Use only the dominant axis to avoid accidental diagonal navigation.
+    Action action = Action::None;
+    if (horizontalMagnitude >= verticalMagnitude) action = horizontal < 0 ? Action::Left : Action::Right;
+    else action = vertical < 0 ? Action::Up : Action::Down;
+
+    const Uint64 now = SDL_GetTicks();
+    if (action != state.activeAction) {
+        state.activeAction = action;
+        state.nextRepeatAt = now + kInitialRepeatDelayMs;
+        return action;
+    }
+    if (now < state.nextRepeatAt) return Action::None;
+
+    state.nextRepeatAt = now + kRepeatIntervalMs;
+    return action;
 }
 
 void InputManager::setActionCallback(Action action, std::function<void()> callback) {

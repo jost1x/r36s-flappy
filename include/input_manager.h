@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <array>
 #include <unordered_map>
 #include <functional>
 
@@ -31,6 +32,12 @@ public:
 private:
     SDL_GameController* controller = nullptr;
     bool initialized = false;
+
+    struct StickState {
+        Action activeAction = Action::None;
+        Uint64 nextRepeatAt = 0;
+    };
+    std::array<StickState, 2> stickStates_{};
 
     Action handleKeyboardEvent(const SDL_KeyboardEvent& key);
     Action handleControllerButtonEvent(const SDL_ControllerButtonEvent& btn, bool pressed);
