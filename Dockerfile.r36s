@@ -60,7 +60,7 @@ RUN mkdir -p /out \
       r36s_font_14.o r36s_font_16.o r36s_font_20.o r36s_font_48.o \
       /opt/liblvgl.a -o /out/r36s-hello \
       $(PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig pkg-config --cflags --libs sdl2 libcurl) \
-      -lm -pthread -lstdc++fs -lfmt -lspdlog
+      -lm -pthread -lstdc++fs -lfmt
 
 FROM scratch
 COPY --from=build /out/r36s-hello /r36s-hello
