@@ -1,10 +1,11 @@
 #include "weather/weather_screen.h"
 
-#include "input_manager.h"
+#include <fmt/format.h>
 
 #include <algorithm>
 #include <chrono>
-#include <fmt/format.h>
+
+#include "input_manager.h"
 
 WeatherScreen::WeatherScreen(WeatherClient& client, SettingsStore& settings) : client_(client), settings_(settings) {
     build();
@@ -39,8 +40,8 @@ void WeatherScreen::selectCityId(const std::string& id, bool fetch) {
 }
 
 long long WeatherScreen::nowSeconds() const {
-    return std::chrono::duration_cast<std::chrono::seconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 
 void WeatherScreen::refresh(bool manual) {
@@ -102,8 +103,7 @@ void WeatherScreen::updateModalRows() {
         const auto& location = weatherLocations()[static_cast<size_t>(city)];
         modalRowCityIndices_[row] = city;
         lv_label_set_text(modalRowNames_[row], location.name);
-        const auto detail = fmt::format("{}{}", location.country,
-                                        settings_.isFavorite(location.id) ? "  [F]" : "");
+        const auto detail = fmt::format("{}{}", location.country, settings_.isFavorite(location.id) ? "  [F]" : "");
         lv_label_set_text(modalRowDetails_[row], detail.c_str());
         lv_obj_set_style_bg_opa(modalRows_[row], city == cityIndex_ ? LV_OPA_40 : LV_OPA_TRANSP, LV_PART_MAIN);
     }
@@ -136,7 +136,8 @@ void WeatherScreen::handleAction(int actionValue) {
         const auto selected = std::find(cities.begin(), cities.end(), cityIndex_);
         const int position = selected == cities.end() ? 0 : static_cast<int>(std::distance(cities.begin(), selected));
         if (action == Action::Up && !cities.empty()) {
-            selectCity(cities[(position + static_cast<int>(cities.size()) - 1) % static_cast<int>(cities.size())], false);
+            selectCity(cities[(position + static_cast<int>(cities.size()) - 1) % static_cast<int>(cities.size())],
+                       false);
             setModalVisible(true);
         }
         if (action == Action::Down && !cities.empty()) {
@@ -203,8 +204,10 @@ void WeatherScreen::handleAction(int actionValue) {
     if (action == Action::Refresh) refresh(true);
     if (action == Action::Favorite) {
         const auto& id = weatherLocations()[static_cast<size_t>(cityIndex_)].id;
-        if (settings_.isFavorite(id)) settings_.removeFavorite(id);
-        else settings_.addFavorite(id);
+        if (settings_.isFavorite(id))
+            settings_.removeFavorite(id);
+        else
+            settings_.addFavorite(id);
         settings_.save();
         updateModalRows();
     }

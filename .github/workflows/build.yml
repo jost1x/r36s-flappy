@@ -10,10 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ libcurl4-openssl-dev libsdl2-dev nlohmann-json3-dev libfmt-dev libspdlog-dev
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
-      - name: Build
-        run: cmake --build build
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ clang-format clang-tidy libcurl4-openssl-dev libsdl2-dev nlohmann-json3-dev libfmt-dev libspdlog-dev
+      - name: Validate
+        run: make -f Makefile-cpp verify

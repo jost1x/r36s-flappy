@@ -1,13 +1,14 @@
 #include "app.h"
 
+#include <lvgl.h>
+#include <spdlog/spdlog.h>
+
+#include <vector>
+
 #include "input_manager.h"
+#include "weather/settings_store.h"
 #include "weather/weather_client.h"
 #include "weather/weather_screen.h"
-#include "weather/settings_store.h"
-#include <lvgl.h>
-
-#include <spdlog/spdlog.h>
-#include <vector>
 
 namespace {
 SDL_Renderer* gRenderer = nullptr;
@@ -40,8 +41,8 @@ bool App::initialize() {
 
     Uint32 windowFlags = SDL_WINDOW_SHOWN;
     if (SDL_getenv("R36S_FULLSCREEN") != nullptr) windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                              WINDOW_WIDTH, WINDOW_HEIGHT, windowFlags);
+    window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT,
+                              windowFlags);
     if (!window) {
         spdlog::error("Failed to create window: {}", SDL_GetError());
         return false;
@@ -53,8 +54,8 @@ bool App::initialize() {
         return false;
     }
     SDL_RenderSetLogicalSize(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
-    frameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                     WINDOW_WIDTH, WINDOW_HEIGHT);
+    frameTexture =
+        SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WINDOW_WIDTH, WINDOW_HEIGHT);
     if (!frameTexture) {
         spdlog::error("Failed to create LVGL texture: {}", SDL_GetError());
         return false;
@@ -84,7 +85,10 @@ bool App::initialize() {
 void App::handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        if (inputManager->shouldExit(event)) { running = false; continue; }
+        if (inputManager->shouldExit(event)) {
+            running = false;
+            continue;
+        }
         const Action action = inputManager->handleEvent(&event);
         if (action != Action::None) weatherScreen->handleAction(static_cast<int>(action));
     }
@@ -104,13 +108,24 @@ void App::cleanup() {
         lv_display_delete(static_cast<lv_display_t*>(display));
         display = nullptr;
     }
-    if (gTexture) { gTexture = nullptr; }
+    if (gTexture) {
+        gTexture = nullptr;
+    }
     gRenderer = nullptr;
     gDrawBuffer.clear();
     lv_deinit();
-    if (frameTexture) { SDL_DestroyTexture(frameTexture); frameTexture = nullptr; }
-    if (renderer) { SDL_DestroyRenderer(renderer); renderer = nullptr; }
-    if (window) { SDL_DestroyWindow(window); window = nullptr; }
+    if (frameTexture) {
+        SDL_DestroyTexture(frameTexture);
+        frameTexture = nullptr;
+    }
+    if (renderer) {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+    }
+    if (window) {
+        SDL_DestroyWindow(window);
+        window = nullptr;
+    }
     SDL_Quit();
 }
 

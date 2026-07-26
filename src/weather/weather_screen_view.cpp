@@ -1,13 +1,13 @@
-#include "weather/weather_screen.h"
-
-#include "weather/weather_icons.h"
+#include <fmt/format.h>
 
 #include <algorithm>
 #include <array>
 #include <ctime>
-#include <fmt/format.h>
 #include <iomanip>
 #include <sstream>
+
+#include "weather/weather_icons.h"
+#include "weather/weather_screen.h"
 
 namespace {
 constexpr lv_color_t kWhite = LV_COLOR_MAKE(245, 248, 252);
@@ -39,7 +39,10 @@ void setObjectWidth(void* object, int32_t value) { lv_obj_set_width(static_cast<
 
 void animateObjectValue(lv_obj_t* object, lv_anim_exec_xcb_t callback, int from, int to, bool animate) {
     lv_anim_delete(object, callback);
-    if (!animate || from == to) { callback(object, to); return; }
+    if (!animate || from == to) {
+        callback(object, to);
+        return;
+    }
     lv_anim_t animation;
     lv_anim_init(&animation);
     lv_anim_set_var(&animation, object);
@@ -63,25 +66,28 @@ void WeatherScreen::updateCityIndicator(bool animate) {
     const auto& favorites = settings_.settings().favorites;
     const auto& cityId = weatherLocations()[static_cast<size_t>(cityIndex_)].id;
     const auto favorite = std::find(favorites.begin(), favorites.end(), cityId);
-    const int activeIndex = favorite != favorites.end()
-        ? static_cast<int>(std::distance(favorites.begin(), favorite)) * static_cast<int>(cityIndicators_.size()) /
-              static_cast<int>(favorites.size())
-        : cityIndex_ * static_cast<int>(cityIndicators_.size()) / static_cast<int>(weatherLocations().size());
+    const int activeIndex =
+        favorite != favorites.end()
+            ? static_cast<int>(std::distance(favorites.begin(), favorite)) * static_cast<int>(cityIndicators_.size()) /
+                  static_cast<int>(favorites.size())
+            : cityIndex_ * static_cast<int>(cityIndicators_.size()) / static_cast<int>(weatherLocations().size());
     for (size_t index = 0; index < cityIndicators_.size(); ++index) {
         auto* indicator = cityIndicators_[index];
         const bool active = static_cast<int>(index) == activeIndex;
         const int width = active ? kActiveIndicatorWidth : kIndicatorWidth;
         animateObjectValue(indicator, setObjectX, lv_obj_get_x(indicator), x, animate);
         animateObjectValue(indicator, setObjectWidth, lv_obj_get_width(indicator), width, animate);
-        animateObjectValue(indicator, setObjectBackgroundOpacity,
-                           lv_obj_get_style_bg_opa(indicator, LV_PART_MAIN), active ? LV_OPA_COVER : LV_OPA_50, animate);
+        animateObjectValue(indicator, setObjectBackgroundOpacity, lv_obj_get_style_bg_opa(indicator, LV_PART_MAIN),
+                           active ? LV_OPA_COVER : LV_OPA_50, animate);
         x += width + kIndicatorGap;
     }
 }
 
 void WeatherScreen::setLoading(bool loading) {
-    if (loading) lv_obj_clear_flag(skeletonLayer_, LV_OBJ_FLAG_HIDDEN);
-    else lv_obj_add_flag(skeletonLayer_, LV_OBJ_FLAG_HIDDEN);
+    if (loading)
+        lv_obj_clear_flag(skeletonLayer_, LV_OBJ_FLAG_HIDDEN);
+    else
+        lv_obj_add_flag(skeletonLayer_, LV_OBJ_FLAG_HIDDEN);
     for (size_t index = 0; index < skeletonBlocks_.size(); ++index) {
         auto* block = skeletonBlocks_[index];
         lv_anim_delete(block, setObjectBackgroundOpacity);
@@ -116,7 +122,8 @@ void WeatherScreen::applyWeather(const WeatherData& data) {
         lv_label_set_text(dayLabels_[index], shortDay(data.daily[index], index));
         lv_image_set_src(dayIcons_[index], weatherImage(data.daily[index].weatherCode));
         lv_obj_invalidate(dayIcons_[index]);
-        setText(dayTemperatureLabels_[index], fmt::format("{}° {}°", data.daily[index].maximum, data.daily[index].minimum));
+        setText(dayTemperatureLabels_[index],
+                fmt::format("{}° {}°", data.daily[index].maximum, data.daily[index].minimum));
     }
     refreshTheme(data.weatherCode);
     rebuildWeatherIcon(data.weatherCode);

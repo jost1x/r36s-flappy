@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
 
-echo "pre-commit: verificando los cambios preparados..."
+echo "pre-commit: ejecutando formato, linter y pruebas..."
 git diff --cached --check
+make -f Makefile-cpp verify

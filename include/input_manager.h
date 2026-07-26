@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+
 #include <array>
 
 enum class Action {
@@ -19,7 +20,7 @@ enum class Action {
 };
 
 class InputManager {
-public:
+   public:
     InputManager();
     ~InputManager();
 
@@ -29,7 +30,7 @@ public:
     Action handleEvent(SDL_Event* event);
     bool shouldExit(const SDL_Event& event);
 
-private:
+   private:
     SDL_GameController* controller = nullptr;
     bool initialized = false;
     bool startPressed_ = false;

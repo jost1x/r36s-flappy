@@ -1,8 +1,10 @@
-.PHONY: all build debug release clean install deploy hooks pre-commit help
+.PHONY: all build debug release clean install deploy hooks pre-commit format lint test verify help
 
 NATIVE_ARCH := $(shell uname -m)
 NATIVE_BIN := bin/$(NATIVE_ARCH)/r36s-hello
 BUILD_BIN := build/r36s-hello
+CPP_SOURCES := $(shell find include src tests -type f \( -name '*.cpp' -o -name '*.h' \) | sort)
+CPP_FILES := $(shell find src tests -type f -name '*.cpp' | sort)
 
 help:
 	@echo "R36S App - C++ Build Targets"
@@ -26,6 +28,20 @@ hooks:
 
 pre-commit:
 	@.githooks/pre-commit
+
+format:
+	@clang-format --dry-run --Werror $(CPP_SOURCES)
+
+lint:
+	@cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	@clang-tidy -p build --warnings-as-errors='*' $(CPP_FILES)
+
+test:
+	@cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	@cmake --build build -j1
+	@ctest --test-dir build --output-on-failure
+
+verify: format lint test
 
 build:
 	@echo "Compilando (Debug)..."

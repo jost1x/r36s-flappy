@@ -1,7 +1,8 @@
 #pragma once
 
-#include <memory>
 #include <SDL2/SDL.h>
+
+#include <memory>
 
 class WeatherClient;
 class WeatherScreen;
@@ -9,13 +10,13 @@ class InputManager;
 class SettingsStore;
 
 class App {
-public:
+   public:
     App();
     ~App();
 
     void run();
 
-private:
+   private:
     bool initialize();
     void handleEvents();
     void update();

@@ -1,0 +1,10 @@
+Checks: >
+  -*,
+  bugprone-incorrect-roundings,
+  bugprone-narrowing-conversions,
+  bugprone-use-after-move,
+  performance-move-const-arg,
+  performance-unnecessary-value-param,
+  modernize-use-nullptr
+WarningsAsErrors: '*'
+HeaderFilterRegex: '^(include|src|tests)/'

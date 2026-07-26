@@ -5,6 +5,7 @@
 - CMake 3.21 o superior
 - Compilador C++17
 - SDL2, libcurl y nlohmann-json
+- clang-format y clang-tidy
 - vcpkg para resolver dependencias de forma reproducible (recomendado)
 
 LVGL 9.2.2 se descarga automáticamente durante la configuración de CMake.
@@ -17,13 +18,15 @@ Activa los hooks versionados una vez después de clonar el repositorio:
 make -f Makefile-cpp hooks
 ```
 
-El hook `pre-commit` comprueba los espacios y conflictos de formato en los cambios preparados. El hook `pre-push` configura la build, compila con un único trabajo y ejecuta `ctest`; cancela el push si alguna comprobación falla.
+Los hooks `pre-commit` y `pre-push` ejecutan la misma validación: comprobación de formato con `clang-format`, análisis estático con `clang-tidy`, compilación y `ctest`. Cancelan la operación si alguna comprobación falla.
 
 Para ejecutar la validación de `pre-commit` manualmente:
 
 ```sh
 make -f Makefile-cpp pre-commit
 ```
+
+También están disponibles por separado `make -f Makefile-cpp format`, `lint` y `test`; `verify` ejecuta las tres comprobaciones.
 
 ## Configuración con vcpkg
 

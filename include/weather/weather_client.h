@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <functional>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -46,7 +46,7 @@ struct WeatherData {
 };
 
 class WeatherClient {
-public:
+   public:
     using ResultHandler = std::function<void(WeatherData)>;
 
     WeatherClient();
@@ -60,8 +60,11 @@ public:
     // Pure parsing entry point used by tests and by the network worker.
     static WeatherData parseResponse(const WeatherLocation& location, const std::string& response);
 
-private:
-    struct PendingRequest { WeatherLocation location; unsigned long long id; };
+   private:
+    struct PendingRequest {
+        WeatherLocation location;
+        unsigned long long id;
+    };
     static WeatherData request(const WeatherLocation& location);
     void workerLoop();
     std::mutex mutex_;

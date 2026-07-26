@@ -1,14 +1,16 @@
 #pragma once
 
-#include "weather_client.h"
-#include "settings_store.h"
 #include <lvgl.h>
+
 #include <array>
 #include <optional>
 #include <vector>
 
+#include "settings_store.h"
+#include "weather_client.h"
+
 class WeatherScreen {
-public:
+   public:
     WeatherScreen(WeatherClient& client, SettingsStore& settings);
     ~WeatherScreen() = default;
 
@@ -16,7 +18,7 @@ public:
     void handleAction(int action);
     void update();
 
-private:
+   private:
     void build();
     void selectCity(int index, bool fetch = true);
     void selectCityId(const std::string& id, bool fetch = true);

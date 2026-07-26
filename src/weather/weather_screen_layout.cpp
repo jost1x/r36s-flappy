@@ -1,9 +1,8 @@
-#include "weather/weather_screen.h"
+#include <array>
 
 #include "weather/app_fonts.h"
 #include "weather/weather_icons.h"
-
-#include <array>
+#include "weather/weather_screen.h"
 
 namespace {
 constexpr lv_color_t kWhite = LV_COLOR_MAKE(245, 248, 252);
@@ -60,11 +59,26 @@ void drawLine(lv_obj_t* parent, const lv_point_precise_t points[], size_t count)
 
 void drawControlIcon(lv_obj_t* parent, ControlIcon icon) {
     switch (icon) {
-        case ControlIcon::Left: drawLine(parent, kLeftHead, 3); drawLine(parent, kLeftShaft, 2); break;
-        case ControlIcon::Right: drawLine(parent, kRightHead, 3); drawLine(parent, kRightShaft, 2); break;
-        case ControlIcon::Up: drawLine(parent, kUpHead, 3); drawLine(parent, kUpShaft, 2); break;
-        case ControlIcon::Down: drawLine(parent, kDownHead, 3); drawLine(parent, kDownShaft, 2); break;
-        case ControlIcon::Confirm: drawLine(parent, kConfirmBody, 3); drawLine(parent, kConfirmBar, 2); break;
+        case ControlIcon::Left:
+            drawLine(parent, kLeftHead, 3);
+            drawLine(parent, kLeftShaft, 2);
+            break;
+        case ControlIcon::Right:
+            drawLine(parent, kRightHead, 3);
+            drawLine(parent, kRightShaft, 2);
+            break;
+        case ControlIcon::Up:
+            drawLine(parent, kUpHead, 3);
+            drawLine(parent, kUpShaft, 2);
+            break;
+        case ControlIcon::Down:
+            drawLine(parent, kDownHead, 3);
+            drawLine(parent, kDownShaft, 2);
+            break;
+        case ControlIcon::Confirm:
+            drawLine(parent, kConfirmBody, 3);
+            drawLine(parent, kConfirmBar, 2);
+            break;
     }
 }
 
@@ -133,19 +147,39 @@ void WeatherScreen::build() {
         rect(panel, x, 224, width, 60);
         translucentPanel(panel);
         text(panel, title, 4, 8, width - 8, 18, kWhite, LV_TEXT_ALIGN_CENTER);
-        *value = text(panel, index == 1 ? "-- km/h" : index == 0 || index == 3 ? "--%" : "--°", 4, 31, width - 8, 20, kWhite, LV_TEXT_ALIGN_CENTER);
+        *value = text(panel,
+                      index == 1                 ? "-- km/h"
+                      : index == 0 || index == 3 ? "--%"
+                                                 : "--°",
+                      4, 31, width - 8, 20, kWhite, LV_TEXT_ALIGN_CENTER);
         return panel;
     };
     auto* humidity = statPanel(0, 164, 124, "Humedad", &humidityValue_);
-    auto* humidityIcon = lv_image_create(humidity); rect(humidityIcon, 11, 20, 20, 20); lv_image_set_src(humidityIcon, &droplets); lv_image_set_scale(humidityIcon, 53);
-    lv_obj_set_style_image_recolor(humidityIcon, kWhite, LV_PART_MAIN); lv_obj_set_style_image_recolor_opa(humidityIcon, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_x(humidityValue_, 38); lv_obj_set_width(humidityValue_, 76); lv_obj_set_style_text_align(humidityValue_, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
-    lv_obj_set_x(lv_obj_get_child(humidity, 0), 38); lv_obj_set_width(lv_obj_get_child(humidity, 0), 76); lv_obj_set_style_text_align(lv_obj_get_child(humidity, 0), LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    auto* humidityIcon = lv_image_create(humidity);
+    rect(humidityIcon, 11, 20, 20, 20);
+    lv_image_set_src(humidityIcon, &droplets);
+    lv_image_set_scale(humidityIcon, 53);
+    lv_obj_set_style_image_recolor(humidityIcon, kWhite, LV_PART_MAIN);
+    lv_obj_set_style_image_recolor_opa(humidityIcon, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_x(humidityValue_, 38);
+    lv_obj_set_width(humidityValue_, 76);
+    lv_obj_set_style_text_align(humidityValue_, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_obj_set_x(lv_obj_get_child(humidity, 0), 38);
+    lv_obj_set_width(lv_obj_get_child(humidity, 0), 76);
+    lv_obj_set_style_text_align(lv_obj_get_child(humidity, 0), LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     auto* windPanel = statPanel(1, 300, 124, "Viento", &windValue_);
-    auto* windIcon = lv_image_create(windPanel); rect(windIcon, 10, 20, 22, 20); lv_image_set_src(windIcon, &wind); lv_image_set_scale(windIcon, 53);
-    lv_obj_set_style_image_recolor(windIcon, kWhite, LV_PART_MAIN); lv_obj_set_style_image_recolor_opa(windIcon, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_x(windValue_, 38); lv_obj_set_width(windValue_, 80); lv_obj_set_style_text_align(windValue_, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
-    lv_obj_set_x(lv_obj_get_child(windPanel, 0), 38); lv_obj_set_width(lv_obj_get_child(windPanel, 0), 76); lv_obj_set_style_text_align(lv_obj_get_child(windPanel, 0), LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    auto* windIcon = lv_image_create(windPanel);
+    rect(windIcon, 10, 20, 22, 20);
+    lv_image_set_src(windIcon, &wind);
+    lv_image_set_scale(windIcon, 53);
+    lv_obj_set_style_image_recolor(windIcon, kWhite, LV_PART_MAIN);
+    lv_obj_set_style_image_recolor_opa(windIcon, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_x(windValue_, 38);
+    lv_obj_set_width(windValue_, 80);
+    lv_obj_set_style_text_align(windValue_, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
+    lv_obj_set_x(lv_obj_get_child(windPanel, 0), 38);
+    lv_obj_set_width(lv_obj_get_child(windPanel, 0), 76);
+    lv_obj_set_style_text_align(lv_obj_get_child(windPanel, 0), LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
     statPanel(2, 436, 76, "Sens.", &feelsValue_);
     statPanel(3, 524, 68, "Lluvia", &rainValue_);
 
@@ -174,31 +208,108 @@ void WeatherScreen::build() {
     lv_obj_set_style_border_color(footer, LV_COLOR_MAKE(180, 220, 238), LV_PART_MAIN);
     lv_obj_set_style_border_opa(footer, LV_OPA_30, LV_PART_MAIN);
     const auto controlChip = [&](int x, ControlIcon icon) {
-        auto* chip = lv_obj_create(footer); rect(chip, x, 8, 22, 20); translucentPanel(chip);
-        lv_obj_set_style_radius(chip, 4, LV_PART_MAIN); lv_obj_set_style_bg_color(chip, LV_COLOR_MAKE(120, 138, 156), LV_PART_MAIN);
-        lv_obj_set_style_bg_opa(chip, LV_OPA_50, LV_PART_MAIN); lv_obj_set_style_border_width(chip, 1, LV_PART_MAIN);
-        lv_obj_set_style_border_color(chip, kWhite, LV_PART_MAIN); lv_obj_set_style_border_opa(chip, LV_OPA_40, LV_PART_MAIN); drawControlIcon(chip, icon);
+        auto* chip = lv_obj_create(footer);
+        rect(chip, x, 8, 22, 20);
+        translucentPanel(chip);
+        lv_obj_set_style_radius(chip, 4, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(chip, LV_COLOR_MAKE(120, 138, 156), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(chip, LV_OPA_50, LV_PART_MAIN);
+        lv_obj_set_style_border_width(chip, 1, LV_PART_MAIN);
+        lv_obj_set_style_border_color(chip, kWhite, LV_PART_MAIN);
+        lv_obj_set_style_border_opa(chip, LV_OPA_40, LV_PART_MAIN);
+        drawControlIcon(chip, icon);
     };
-    const auto separator = [&](int x) { auto* line = lv_obj_create(footer); rect(line, x, 8, 1, 20); transparentContainer(line); lv_obj_set_style_bg_color(line, LV_COLOR_MAKE(124, 140, 156), LV_PART_MAIN); lv_obj_set_style_bg_opa(line, LV_OPA_30, LV_PART_MAIN); };
-    controlChip(117, ControlIcon::Up); controlChip(145, ControlIcon::Down); text(footer, "Ciudad", 175, 8, 76, 20, LV_COLOR_MAKE(232, 239, 246)); separator(259);
-    controlChip(281, ControlIcon::Left); controlChip(309, ControlIcon::Right); text(footer, "Día", 339, 8, 42, 20, LV_COLOR_MAKE(232, 239, 246)); separator(391);
-    controlChip(415, ControlIcon::Confirm); text(footer, "Detalle", 445, 8, 74, 20, LV_COLOR_MAKE(232, 239, 246));
+    const auto separator = [&](int x) {
+        auto* line = lv_obj_create(footer);
+        rect(line, x, 8, 1, 20);
+        transparentContainer(line);
+        lv_obj_set_style_bg_color(line, LV_COLOR_MAKE(124, 140, 156), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(line, LV_OPA_30, LV_PART_MAIN);
+    };
+    controlChip(117, ControlIcon::Up);
+    controlChip(145, ControlIcon::Down);
+    text(footer, "Ciudad", 175, 8, 76, 20, LV_COLOR_MAKE(232, 239, 246));
+    separator(259);
+    controlChip(281, ControlIcon::Left);
+    controlChip(309, ControlIcon::Right);
+    text(footer, "Día", 339, 8, 42, 20, LV_COLOR_MAKE(232, 239, 246));
+    separator(391);
+    controlChip(415, ControlIcon::Confirm);
+    text(footer, "Detalle", 445, 8, 74, 20, LV_COLOR_MAKE(232, 239, 246));
     noticeLabel_ = text(card_, "", 70, 272, 470, 18, kWhite, LV_TEXT_ALIGN_CENTER);
     updatedLabel_ = text(card_, "", 404, 48, 175, 18, LV_COLOR_MAKE(220, 240, 250), LV_TEXT_ALIGN_RIGHT);
 
-    skeletonLayer_ = lv_obj_create(card_); rect(skeletonLayer_, 0, 0, 608, 392); transparentContainer(skeletonLayer_);
-    lv_obj_remove_flag(skeletonLayer_, LV_OBJ_FLAG_CLICKABLE); lv_obj_set_style_bg_color(skeletonLayer_, kBlue, LV_PART_MAIN); lv_obj_set_style_bg_opa(skeletonLayer_, LV_OPA_COVER, LV_PART_MAIN);
-    const std::array<lv_area_t, 13> skeletonAreas{{{34,24,194,46},{34,51,118,66},{514,32,570,38},{40,118,140,218},{164,96,403,153},{164,168,363,188},{164,224,287,283},{300,224,423,283},{16,292,123,391},{132,292,239,391},{248,292,355,391},{364,292,471,391},{480,292,587,391}}};
-    for (size_t index = 0; index < skeletonBlocks_.size(); ++index) { auto* block = lv_obj_create(skeletonLayer_); const auto& area = skeletonAreas[index]; rect(block, area.x1, area.y1, area.x2 - area.x1 + 1, area.y2 - area.y1 + 1); transparentContainer(block); lv_obj_remove_flag(block, LV_OBJ_FLAG_CLICKABLE); lv_obj_set_style_radius(block, index < 2 ? 8 : 14, LV_PART_MAIN); lv_obj_set_style_bg_color(block, LV_COLOR_MAKE(220,235,245), LV_PART_MAIN); lv_obj_set_style_bg_opa(block, LV_OPA_20, LV_PART_MAIN); skeletonBlocks_[index] = block; }
+    skeletonLayer_ = lv_obj_create(card_);
+    rect(skeletonLayer_, 0, 0, 608, 392);
+    transparentContainer(skeletonLayer_);
+    lv_obj_remove_flag(skeletonLayer_, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_bg_color(skeletonLayer_, kBlue, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(skeletonLayer_, LV_OPA_COVER, LV_PART_MAIN);
+    const std::array<lv_area_t, 13> skeletonAreas{{{34, 24, 194, 46},
+                                                   {34, 51, 118, 66},
+                                                   {514, 32, 570, 38},
+                                                   {40, 118, 140, 218},
+                                                   {164, 96, 403, 153},
+                                                   {164, 168, 363, 188},
+                                                   {164, 224, 287, 283},
+                                                   {300, 224, 423, 283},
+                                                   {16, 292, 123, 391},
+                                                   {132, 292, 239, 391},
+                                                   {248, 292, 355, 391},
+                                                   {364, 292, 471, 391},
+                                                   {480, 292, 587, 391}}};
+    for (size_t index = 0; index < skeletonBlocks_.size(); ++index) {
+        auto* block = lv_obj_create(skeletonLayer_);
+        const auto& area = skeletonAreas[index];
+        rect(block, area.x1, area.y1, area.x2 - area.x1 + 1, area.y2 - area.y1 + 1);
+        transparentContainer(block);
+        lv_obj_remove_flag(block, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_style_radius(block, index < 2 ? 8 : 14, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(block, LV_COLOR_MAKE(220, 235, 245), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(block, LV_OPA_20, LV_PART_MAIN);
+        skeletonBlocks_[index] = block;
+    }
     setLoading(false);
 
-    modalBackdrop_ = lv_obj_create(root_); rect(modalBackdrop_, 0, 0, 640, 480); transparentContainer(modalBackdrop_); lv_obj_set_style_bg_color(modalBackdrop_, LV_COLOR_MAKE(12,18,26), LV_PART_MAIN); lv_obj_set_style_bg_opa(modalBackdrop_, LV_OPA_70, LV_PART_MAIN);
-    modal_ = lv_obj_create(root_); rect(modal_, 44, 86, 552, 284); translucentPanel(modal_); lv_obj_set_style_radius(modal_, 18, LV_PART_MAIN); lv_obj_set_style_bg_color(modal_, LV_COLOR_MAKE(86,96,108), LV_PART_MAIN); lv_obj_set_style_bg_opa(modal_, LV_OPA_COVER, LV_PART_MAIN); lv_obj_set_style_border_width(modal_, 1, LV_PART_MAIN); lv_obj_set_style_border_color(modal_, LV_COLOR_MAKE(188,198,208), LV_PART_MAIN); lv_obj_set_style_border_opa(modal_, LV_OPA_40, LV_PART_MAIN); lv_obj_set_user_data(modal_, this);
-    auto* header = lv_obj_create(modal_); rect(header, 0, 0, 552, 44); transparentContainer(header);
-    modalTitle_ = text(header, "FAVORITOS  [DER: CATÁLOGO]", 16, 10, 360, 18, LV_COLOR_MAKE(229,234,240));
-    modalPageLabel_ = text(header, "", 390, 10, 145, 18, LV_COLOR_MAKE(220,226,233), LV_TEXT_ALIGN_RIGHT);
+    modalBackdrop_ = lv_obj_create(root_);
+    rect(modalBackdrop_, 0, 0, 640, 480);
+    transparentContainer(modalBackdrop_);
+    lv_obj_set_style_bg_color(modalBackdrop_, LV_COLOR_MAKE(12, 18, 26), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(modalBackdrop_, LV_OPA_70, LV_PART_MAIN);
+    modal_ = lv_obj_create(root_);
+    rect(modal_, 44, 86, 552, 284);
+    translucentPanel(modal_);
+    lv_obj_set_style_radius(modal_, 18, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(modal_, LV_COLOR_MAKE(86, 96, 108), LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(modal_, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_border_width(modal_, 1, LV_PART_MAIN);
+    lv_obj_set_style_border_color(modal_, LV_COLOR_MAKE(188, 198, 208), LV_PART_MAIN);
+    lv_obj_set_style_border_opa(modal_, LV_OPA_40, LV_PART_MAIN);
+    lv_obj_set_user_data(modal_, this);
+    auto* header = lv_obj_create(modal_);
+    rect(header, 0, 0, 552, 44);
+    transparentContainer(header);
+    modalTitle_ = text(header, "FAVORITOS  [DER: CATÁLOGO]", 16, 10, 360, 18, LV_COLOR_MAKE(229, 234, 240));
+    modalPageLabel_ = text(header, "", 390, 10, 145, 18, LV_COLOR_MAKE(220, 226, 233), LV_TEXT_ALIGN_RIGHT);
     constexpr std::array<int, 4> codes{{0, 2, 61, 0}};
-    for (size_t index = 0; index < modalRows_.size(); ++index) { auto* row = lv_obj_create(modal_); rect(row, 0, 44 + static_cast<int>(index) * 55, 552, 55); transparentContainer(row); lv_obj_add_flag(row, LV_OBJ_FLAG_CLICKABLE); lv_obj_set_style_bg_color(row, LV_COLOR_MAKE(174,183,193), LV_PART_MAIN); lv_obj_add_event_cb(row, cityButtonEvent, LV_EVENT_CLICKED, nullptr); auto* icon = lv_image_create(row); rect(icon, 18, 16, 24, 24); lv_image_set_src(icon, weatherImage(codes[index])); lv_image_set_scale(icon, 64); lv_obj_set_style_image_recolor(icon, kWhite, LV_PART_MAIN); lv_obj_set_style_image_recolor_opa(icon, LV_OPA_COVER, LV_PART_MAIN); modalRowNames_[index] = text(row, "", 54, 9, 330, 20, kWhite); lv_obj_set_style_text_font(modalRowNames_[index], &r36s_font_16, LV_PART_MAIN); modalRowDetails_[index] = text(row, "", 54, 30, 430, 17, LV_COLOR_MAKE(220,226,233)); modalRows_[index] = row; }
+    for (size_t index = 0; index < modalRows_.size(); ++index) {
+        auto* row = lv_obj_create(modal_);
+        rect(row, 0, 44 + static_cast<int>(index) * 55, 552, 55);
+        transparentContainer(row);
+        lv_obj_add_flag(row, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_style_bg_color(row, LV_COLOR_MAKE(174, 183, 193), LV_PART_MAIN);
+        lv_obj_add_event_cb(row, cityButtonEvent, LV_EVENT_CLICKED, nullptr);
+        auto* icon = lv_image_create(row);
+        rect(icon, 18, 16, 24, 24);
+        lv_image_set_src(icon, weatherImage(codes[index]));
+        lv_image_set_scale(icon, 64);
+        lv_obj_set_style_image_recolor(icon, kWhite, LV_PART_MAIN);
+        lv_obj_set_style_image_recolor_opa(icon, LV_OPA_COVER, LV_PART_MAIN);
+        modalRowNames_[index] = text(row, "", 54, 9, 330, 20, kWhite);
+        lv_obj_set_style_text_font(modalRowNames_[index], &r36s_font_16, LV_PART_MAIN);
+        modalRowDetails_[index] = text(row, "", 54, 30, 430, 17, LV_COLOR_MAKE(220, 226, 233));
+        modalRows_[index] = row;
+    }
     lv_obj_move_foreground(header);
     setModalVisible(false);
     updateModalRows();

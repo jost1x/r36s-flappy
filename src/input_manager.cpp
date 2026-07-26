@@ -1,13 +1,13 @@
 #include "../include/input_manager.h"
+
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <cstdlib>
-#include <spdlog/spdlog.h>
 
 InputManager::InputManager() {}
 
-InputManager::~InputManager() {
-    close();
-}
+InputManager::~InputManager() { close(); }
 
 bool InputManager::open() {
     if (SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0) {
@@ -173,8 +173,10 @@ Action InputManager::handleControllerAxisEvent(const SDL_ControllerAxisEvent& ax
 
     // Use only the dominant axis to avoid accidental diagonal navigation.
     Action action = Action::None;
-    if (horizontalMagnitude >= verticalMagnitude) action = horizontal < 0 ? Action::Left : Action::Right;
-    else action = vertical < 0 ? Action::Up : Action::Down;
+    if (horizontalMagnitude >= verticalMagnitude)
+        action = horizontal < 0 ? Action::Left : Action::Right;
+    else
+        action = vertical < 0 ? Action::Up : Action::Down;
 
     const Uint64 now = SDL_GetTicks();
     if (action != state.activeAction) {

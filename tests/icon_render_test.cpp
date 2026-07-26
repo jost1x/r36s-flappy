@@ -1,15 +1,16 @@
-#include "weather/weather_icons.h"
-
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+#include "weather/weather_icons.h"
 
 void runIconRenderTest() {
     lv_init();
     std::vector<uint32_t> buffer(96U * 96U, 0U);
     lv_display_t* display = lv_display_create(96, 96);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_ARGB8888);
-    lv_display_set_buffers(display, buffer.data(), nullptr, buffer.size() * sizeof(uint32_t), LV_DISPLAY_RENDER_MODE_FULL);
+    lv_display_set_buffers(display, buffer.data(), nullptr, buffer.size() * sizeof(uint32_t),
+                           LV_DISPLAY_RENDER_MODE_FULL);
 
     lv_obj_t* screen = lv_obj_create(nullptr);
     lv_obj_set_style_bg_color(screen, LV_COLOR_MAKE(0, 0, 0), LV_PART_MAIN);
@@ -24,7 +25,10 @@ void runIconRenderTest() {
 
     bool hasIconPixel = false;
     for (const auto pixel : buffer) {
-        if (pixel != 0U && pixel != 0xFF000000U) { hasIconPixel = true; break; }
+        if (pixel != 0U && pixel != 0xFF000000U) {
+            hasIconPixel = true;
+            break;
+        }
     }
     assert(hasIconPixel);
     lv_display_delete(display);

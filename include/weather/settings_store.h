@@ -1,11 +1,11 @@
 #pragma once
 
-#include "weather_client.h"
-
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "weather_client.h"
 
 struct AppSettings {
     std::string activeCityId = "santiago";
@@ -13,7 +13,7 @@ struct AppSettings {
 };
 
 class SettingsStore {
-public:
+   public:
     explicit SettingsStore(std::string path = {});
 
     bool load();
@@ -29,7 +29,7 @@ public:
     std::optional<WeatherData> cached(const std::string& cityId, long long now, long long maxAgeSeconds) const;
     const std::string& path() const { return path_; }
 
-private:
+   private:
     std::string path_;
     AppSettings settings_;
     std::unordered_map<std::string, WeatherData> cache_;

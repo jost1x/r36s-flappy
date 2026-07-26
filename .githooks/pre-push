@@ -1,7 +1,5 @@
 #!/bin/sh
 set -eu
 
-echo "pre-push: configurando y validando el proyecto..."
-cmake -S . -B build -DBUILD_TESTING=ON
-cmake --build build -j1
-ctest --test-dir build --output-on-failure
+echo "pre-push: ejecutando formato, linter y pruebas..."
+make -f Makefile-cpp verify
