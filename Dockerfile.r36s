@@ -13,6 +13,8 @@ RUN sed -i \
         libc6-dev-arm64-cross \
         libsdl2-dev:arm64 \
         libcurl4-openssl-dev:arm64 \
+        libfmt-dev:arm64 \
+        libspdlog-dev:arm64 \
         nlohmann-json3-dev \
         ca-certificates \
         git \
@@ -45,17 +47,20 @@ COPY src ./src
 
 RUN mkdir -p /out \
     && aarch64-linux-gnu-gcc -std=c17 -O2 -DLV_CONF_INCLUDE_SIMPLE -DLV_LVGL_H_INCLUDE_SIMPLE -Iinclude -I/opt/lvgl \
-      -c src/weather/icons/*.c \
+      -c src/weather/icons/*.c src/fonts/*.c \
     && PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig \
     aarch64-linux-gnu-g++ -std=c++17 -O2 -Wall -Wextra -DR36S_FULLSCREEN=1 \
       -I. -Iinclude -I/opt/lvgl \
       src/main.cpp src/app.cpp src/input_manager.cpp \
-      src/weather/weather_client.cpp src/weather/weather_screen.cpp \
+      src/weather/weather_client.cpp src/weather/weather_locations.cpp src/weather/weather_parser.cpp \
+      src/weather/settings_store.cpp src/weather/weather_screen.cpp src/weather/weather_screen_layout.cpp \
+      src/weather/weather_screen_view.cpp \
       sun.o cloud-sun.o cloud.o cloud-rain.o cloud-snow.o cloud-fog.o cloud-lightning.o \
       droplets.o wind.o chevrons-up-down.o chevrons-left-right.o circle.o \
+      r36s_font_14.o r36s_font_16.o r36s_font_20.o r36s_font_48.o \
       /opt/liblvgl.a -o /out/r36s-hello \
       $(PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig pkg-config --cflags --libs sdl2 libcurl) \
-      -lm -pthread
+      -lm -pthread -lstdc++fs -lfmt -lspdlog
 
 FROM scratch
 COPY --from=build /out/r36s-hello /r36s-hello

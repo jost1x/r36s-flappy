@@ -24,6 +24,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 REQUIRED)
 find_package(CURL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 # LVGL is fetched from its upstream release because the vcpkg registry used by
 # the R36S toolchain does not currently publish an lvgl port.
@@ -38,7 +40,10 @@ set(LV_CONF_BUILD_DISABLE_EXAMPLES ON CACHE BOOL "" FORCE)
 set(LV_CONF_BUILD_DISABLE_DEMOS ON CACHE BOOL "" FORCE)
 set(LV_CONF_BUILD_DISABLE_THORVG_INTERNAL ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(lvgl)
-target_compile_definitions(lvgl PUBLIC LV_CONF_INCLUDE_SIMPLE)
+target_compile_definitions(lvgl PUBLIC
+    LV_CONF_INCLUDE_SIMPLE
+    LV_DRAW_SW_SUPPORT_A8=1
+)
 target_include_directories(lvgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Create executable
@@ -47,7 +52,16 @@ add_executable(r36s-hello
     src/app.cpp
     src/input_manager.cpp
     src/weather/weather_client.cpp
+    src/weather/weather_locations.cpp
+    src/weather/weather_parser.cpp
+    src/weather/settings_store.cpp
     src/weather/weather_screen.cpp
+    src/weather/weather_screen_layout.cpp
+    src/weather/weather_screen_view.cpp
+    src/fonts/r36s_font_14.c
+    src/fonts/r36s_font_16.c
+    src/fonts/r36s_font_20.c
+    src/fonts/r36s_font_48.c
     src/weather/icons/sun.c
     src/weather/icons/cloud-sun.c
     src/weather/icons/cloud.c
@@ -74,6 +88,8 @@ target_link_libraries(r36s-hello PRIVATE
     lvgl
     CURL::libcurl
     nlohmann_json::nlohmann_json
+    fmt::fmt
+    spdlog::spdlog
 )
 
 # Compiler flags
@@ -85,4 +101,20 @@ endif()
 option(R36S_FULLSCREEN "Build for fullscreen R36S display" OFF)
 if(R36S_FULLSCREEN)
     target_compile_definitions(r36s-hello PRIVATE R36S_FULLSCREEN=1)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(weather_core_tests
+        tests/weather_core_tests.cpp
+        tests/icon_render_test.cpp
+        src/weather/weather_client.cpp
+        src/weather/weather_locations.cpp
+        src/weather/weather_parser.cpp
+        src/weather/settings_store.cpp
+        src/weather/icons/cloud.c
+    )
+    target_include_directories(weather_core_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(weather_core_tests PRIVATE CURL::libcurl lvgl nlohmann_json::nlohmann_json fmt::fmt spdlog::spdlog)
+    add_test(NAME weather_core_tests COMMAND weather_core_tests)
 endif()
