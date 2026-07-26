@@ -22,6 +22,10 @@ Open-Meteo ← WeatherClient ← WeatherScreen
 | Interfaz | `src/weather/weather_screen.cpp` | Construye la pantalla, el selector de ciudades, estados de carga y controles. |
 | Recursos | `src/weather/icons/` | Iconos LVGL compilados junto con la aplicación. |
 
+## Memoria de LVGL
+
+La interfaz usa iconos en formato alpha A8, capas modales y animaciones. Por ello, `include/lv_conf.h` configura un pool de LVGL de 512 KiB (`LV_MEM_SIZE`) y activa el renderizado A8 (`LV_DRAW_SW_SUPPORT_A8`). Esta configuración es parte del requisito de la interfaz: el pool predeterminado de 64 KiB puede dejar los iconos sin dibujar cuando falta memoria temporal.
+
 ## Flujo de datos
 
 1. `WeatherScreen::show()` selecciona la ciudad inicial y solicita sus datos.
