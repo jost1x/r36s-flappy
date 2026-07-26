@@ -3,9 +3,10 @@
 #include "input_manager.h"
 #include "weather/weather_client.h"
 #include "weather/weather_screen.h"
+#include "weather/settings_store.h"
 #include <lvgl.h>
 
-#include <iostream>
+#include <spdlog/spdlog.h>
 #include <vector>
 
 namespace {
@@ -33,7 +34,7 @@ App::~App() { cleanup(); }
 
 bool App::initialize() {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) != 0) {
-        std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
+        spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
         return false;
     }
 
@@ -42,20 +43,20 @@ bool App::initialize() {
     window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                               WINDOW_WIDTH, WINDOW_HEIGHT, windowFlags);
     if (!window) {
-        std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
+        spdlog::error("Failed to create window: {}", SDL_GetError());
         return false;
     }
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     if (!renderer) {
-        std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
+        spdlog::error("Failed to create renderer: {}", SDL_GetError());
         return false;
     }
     SDL_RenderSetLogicalSize(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
     frameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                      WINDOW_WIDTH, WINDOW_HEIGHT);
     if (!frameTexture) {
-        std::cerr << "Failed to create LVGL texture: " << SDL_GetError() << std::endl;
+        spdlog::error("Failed to create LVGL texture: {}", SDL_GetError());
         return false;
     }
 
@@ -72,28 +73,18 @@ bool App::initialize() {
     inputManager = std::make_unique<InputManager>();
     inputManager->open();
     weatherClient = std::make_unique<WeatherClient>();
-    weatherScreen = std::make_unique<WeatherScreen>(*weatherClient);
+    settingsStore = std::make_unique<SettingsStore>();
+    settingsStore->load();
+    weatherScreen = std::make_unique<WeatherScreen>(*weatherClient, *settingsStore);
     weatherScreen->show();
-    std::cout << "LVGL weather app initialized" << std::endl;
+    spdlog::info("LVGL weather app initialized");
     return true;
 }
 
 void App::handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) { running = false; continue; }
-        if (event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP) {
-            const bool pressed = event.type == SDL_CONTROLLERBUTTONDOWN;
-            if (event.cbutton.button == SDL_CONTROLLER_BUTTON_START) startPressed = pressed;
-            if (event.cbutton.button == SDL_CONTROLLER_BUTTON_BACK) backPressed = pressed;
-            if (startPressed && backPressed) { running = false; continue; }
-        }
-        if (event.type == SDL_JOYBUTTONDOWN || event.type == SDL_JOYBUTTONUP) {
-            const bool pressed = event.type == SDL_JOYBUTTONDOWN;
-            if (event.jbutton.button == 13) startPressed = pressed;
-            if (event.jbutton.button == 12) backPressed = pressed;
-            if (startPressed && backPressed) { running = false; continue; }
-        }
+        if (inputManager->shouldExit(event)) { running = false; continue; }
         const Action action = inputManager->handleEvent(&event);
         if (action != Action::None) weatherScreen->handleAction(static_cast<int>(action));
     }
@@ -105,6 +96,8 @@ void App::render() { lv_timer_handler(); }
 
 void App::cleanup() {
     weatherScreen.reset();
+    if (settingsStore) settingsStore->save();
+    settingsStore.reset();
     weatherClient.reset();
     inputManager.reset();
     if (display) {

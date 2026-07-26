@@ -1,5 +1,5 @@
 #include "include/app.h"
-#include <iostream>
+#include <spdlog/spdlog.h>
 
 int main(int argc, char* argv[]) {
     try {
@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
         app.run();
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
+        spdlog::critical("Fatal error: {}", e.what());
         return 1;
     }
 }

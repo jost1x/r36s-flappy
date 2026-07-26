@@ -6,6 +6,7 @@
 class WeatherClient;
 class WeatherScreen;
 class InputManager;
+class SettingsStore;
 
 class App {
 public:
@@ -29,9 +30,8 @@ private:
     std::unique_ptr<WeatherClient> weatherClient;
     std::unique_ptr<WeatherScreen> weatherScreen;
     std::unique_ptr<InputManager> inputManager;
+    std::unique_ptr<SettingsStore> settingsStore;
     bool running = true;
-    bool startPressed = false;
-    bool backPressed = false;
 
     static constexpr int WINDOW_WIDTH = 640;
     static constexpr int WINDOW_HEIGHT = 480;

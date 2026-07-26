@@ -2,8 +2,6 @@
 
 #include <SDL2/SDL.h>
 #include <array>
-#include <unordered_map>
-#include <functional>
 
 enum class Action {
     Up,
@@ -12,6 +10,10 @@ enum class Action {
     Right,
     Confirm,
     Back,
+    Refresh,
+    Favorite,
+    MoveFavoriteUp,
+    MoveFavoriteDown,
     Exit,
     None
 };
@@ -25,13 +27,13 @@ public:
     void close();
 
     Action handleEvent(SDL_Event* event);
-    bool shouldExit(SDL_Event* event) const;
-
-    void setActionCallback(Action action, std::function<void()> callback);
+    bool shouldExit(const SDL_Event& event);
 
 private:
     SDL_GameController* controller = nullptr;
     bool initialized = false;
+    bool startPressed_ = false;
+    bool backPressed_ = false;
 
     struct StickState {
         Action activeAction = Action::None;
