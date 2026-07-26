@@ -11,16 +11,16 @@ class App {
 public:
     App();
     ~App();
-    
+
     void run();
-    
+
 private:
     bool initialize();
     void handleEvents();
     void update();
     void render();
     void cleanup();
-    
+
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
     SDL_Texture* frameTexture = nullptr;
@@ -32,7 +32,7 @@ private:
     bool running = true;
     bool startPressed = false;
     bool backPressed = false;
-    
+
     static constexpr int WINDOW_WIDTH = 640;
     static constexpr int WINDOW_HEIGHT = 480;
     static constexpr const char* WINDOW_TITLE = "R36S - Weather App";

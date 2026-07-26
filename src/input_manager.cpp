@@ -12,7 +12,7 @@ bool InputManager::open() {
         std::cerr << "Failed to init game controller: " << SDL_GetError() << std::endl;
         return false;
     }
-    
+
     // Try to open first connected controller
     for (int i = 0; i < SDL_NumJoysticks(); ++i) {
         if (SDL_IsGameController(i)) {
@@ -24,7 +24,7 @@ bool InputManager::open() {
             }
         }
     }
-    
+
     std::cout << "No game controller found, using keyboard" << std::endl;
     initialized = true;
     return true;
@@ -41,7 +41,7 @@ void InputManager::close() {
 
 Action InputManager::handleEvent(SDL_Event* event) {
     if (!event) return Action::None;
-    
+
     switch (event->type) {
         case SDL_KEYDOWN:
             return handleKeyboardEvent(event->key);
@@ -58,25 +58,25 @@ Action InputManager::handleEvent(SDL_Event* event) {
 
 bool InputManager::shouldExit(SDL_Event* event) const {
     if (event->type == SDL_QUIT) return true;
-    
+
     if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
         return true;
     }
-    
+
     // SELECT + START on R36S (mapped as BACK + START)
     if (event->type == SDL_CONTROLLERBUTTONDOWN) {
-        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_BACK || 
+        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_BACK ||
             event->cbutton.button == SDL_CONTROLLER_BUTTON_START) {
             return true;
         }
     }
-    
+
     return false;
 }
 
 Action InputManager::handleKeyboardEvent(const SDL_KeyboardEvent& key) {
     if (key.state != SDL_PRESSED) return Action::None;
-    
+
     switch (key.keysym.sym) {
         case SDLK_UP:
             return Action::Up;
@@ -100,7 +100,7 @@ Action InputManager::handleKeyboardEvent(const SDL_KeyboardEvent& key) {
 
 Action InputManager::handleControllerButtonEvent(const SDL_ControllerButtonEvent& btn, bool pressed) {
     if (!pressed) return Action::None;
-    
+
     switch (btn.button) {
         case SDL_CONTROLLER_BUTTON_DPAD_UP:
             return Action::Up;
@@ -125,7 +125,7 @@ Action InputManager::handleControllerButtonEvent(const SDL_ControllerButtonEvent
 
 Action InputManager::handleControllerAxisEvent(const SDL_ControllerAxisEvent& axis) {
     const Sint16 AXIS_THRESHOLD = 20000;
-    
+
     if (axis.value < -AXIS_THRESHOLD) {
         if (axis.axis == SDL_CONTROLLER_AXIS_LEFTX || axis.axis == SDL_CONTROLLER_AXIS_RIGHTX) {
             return Action::Left;
@@ -139,7 +139,7 @@ Action InputManager::handleControllerAxisEvent(const SDL_ControllerAxisEvent& ax
             return Action::Down;
         }
     }
-    
+
     return Action::None;
 }
 
