@@ -1,0 +1,33 @@
+# Generated builds and binaries
+/build/
+/build-r36s/
+/bin/
+
+# Local dependency installs
+/vcpkg_installed/
+
+# Legacy project kept outside the C++ application repository
+/r36s-app/
+
+# Tooling and editor state
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CMake and compiled files
+CMakeCache.txt
+CMakeUserPresets.json
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+r36s-hello
+
+# Local configuration and logs
+.env
+.env.local
+*.log

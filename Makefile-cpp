@@ -1,0 +1,57 @@
+.PHONY: all build debug release clean install deploy help
+
+NATIVE_ARCH := $(shell uname -m)
+NATIVE_BIN := bin/$(NATIVE_ARCH)/r36s-hello
+BUILD_BIN := build/r36s-hello
+
+help:
+	@echo "R36S App - C++ Build Targets"
+	@echo "============================"
+	@echo "make build      - Compilación local (debug)"
+	@echo "make release    - Compilación optimizada"
+	@echo "make arm64      - Compilación cruzada para R36S (ARM64)"
+	@echo "make clean      - Limpiar directorios de compilación"
+	@echo "make run        - Ejecutar localmente"
+	@echo "make deploy     - Desplegar a R36S por SSH"
+	@echo "make install    - Instalar dependencias"
+
+install:
+	@echo "Instalando dependencias..."
+	sudo apt update
+	sudo apt install -y build-essential cmake git libsdl2-dev libsdl2-ttf-dev fonts-dejavu-core
+
+build:
+	@echo "Compilando (Debug)..."
+	@mkdir -p build
+	@cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug && cmake --build .
+	@echo "✓ Compilación completada: ./$(BUILD_BIN)"
+
+debug: build
+
+release:
+	@echo "Compilando (Release)..."
+	@mkdir -p build
+	@cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build .
+	@echo "✓ Compilación completada: ./$(BUILD_BIN)"
+
+arm64:
+	@bash build-r36s.sh
+
+clean:
+	@echo "Limpiando..."
+	@rm -rf build
+	@rm -f $(NATIVE_BIN)
+
+run: build
+	@echo "Ejecutando..."
+	@./$(BUILD_BIN)
+
+deploy: arm64
+	@bash deploy-r36s.sh
+
+watch:
+	@while true; do \
+		clear; \
+		make build; \
+		inotifywait -r -e modify src/ include/; \
+	done

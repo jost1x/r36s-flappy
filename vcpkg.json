@@ -1,0 +1,20 @@
+{
+  "name": "r36s-app-cpp",
+  "version": "1.0.0",
+  "description": "R36S Weather App - C++ with SDL2 and LVGL",
+  "dependencies": [
+    {
+      "name": "sdl2",
+      "default-features": false,
+      "features": ["dbus", "ibus", "wayland", "x11"],
+      "platform": "!arm64"
+    },
+    {
+      "name": "sdl2",
+      "default-features": false,
+      "platform": "arm64"
+    },
+    "curl",
+    "nlohmann-json"
+  ]
+}

@@ -1,0 +1,54 @@
+# Build against Debian Buster's glibc 2.28 so the ARM64 executable remains
+# compatible with the older userspace shipped by ArkOS on the R36S.
+FROM --platform=$BUILDPLATFORM debian:buster AS build
+
+RUN sed -i \
+        -e 's|^# deb http://snapshot.debian.org|deb http://snapshot.debian.org|' \
+        -e 's|^deb http://deb.debian.org|# deb http://deb.debian.org|' \
+        /etc/apt/sources.list \
+    && dpkg --add-architecture arm64 \
+    && apt-get -o Acquire::Check-Valid-Until=false update \
+    && apt-get install -y --no-install-recommends \
+        g++-aarch64-linux-gnu \
+        libc6-dev-arm64-cross \
+        libsdl2-dev:arm64 \
+        libcurl4-openssl-dev:arm64 \
+        nlohmann-json3-dev \
+        ca-certificates \
+        git \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY include ./include
+COPY src ./src
+
+# The vcpkg registry used by the project has no LVGL port. Build the pinned
+# upstream release as ARM64, using this project's lv_conf.h configuration.
+RUN git clone --depth 1 --branch v9.2.2 https://github.com/lvgl/lvgl.git /opt/lvgl \
+    && mkdir -p /tmp/lvgl-objects \
+    && cd /opt/lvgl \
+    && for source in $(find src -name '*.c'); do \
+         object="/tmp/lvgl-objects/${source%.c}.o"; \
+         mkdir -p "$(dirname "$object")"; \
+         aarch64-linux-gnu-gcc -std=c17 -O2 -DLV_CONF_INCLUDE_SIMPLE \
+           -I/src/include -I/opt/lvgl -c "$source" -o "$object"; \
+       done \
+    && aarch64-linux-gnu-ar rcs /opt/liblvgl.a $(find /tmp/lvgl-objects -name '*.o')
+
+RUN mkdir -p /out \
+    && aarch64-linux-gnu-gcc -std=c17 -O2 -DLV_CONF_INCLUDE_SIMPLE -DLV_LVGL_H_INCLUDE_SIMPLE -Iinclude -I/opt/lvgl \
+      -c src/weather/icons/*.c \
+    && PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig \
+    aarch64-linux-gnu-g++ -std=c++17 -O2 -Wall -Wextra -DR36S_FULLSCREEN=1 \
+      -I. -Iinclude -I/opt/lvgl \
+      src/main.cpp src/app.cpp src/input_manager.cpp \
+      src/weather/weather_client.cpp src/weather/weather_screen.cpp \
+      sun.o cloud-sun.o cloud.o cloud-rain.o cloud-snow.o cloud-fog.o cloud-lightning.o \
+      droplets.o wind.o chevrons-up-down.o chevrons-left-right.o circle.o \
+      /opt/liblvgl.a -o /out/r36s-hello \
+      $(PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig pkg-config --cflags --libs sdl2 libcurl) \
+      -lm -pthread
+
+FROM scratch
+COPY --from=build /out/r36s-hello /r36s-hello
