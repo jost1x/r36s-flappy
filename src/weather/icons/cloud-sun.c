@@ -129,4 +129,3 @@ const lv_image_dsc_t cloud_sun = {
   .data_size = sizeof(cloud_sun_map),
   .data = cloud_sun_map,
 };
-

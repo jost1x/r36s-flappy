@@ -129,4 +129,3 @@ const lv_image_dsc_t circle = {
   .data_size = sizeof(circle_map),
   .data = circle_map,
 };
-

@@ -129,4 +129,3 @@ const lv_image_dsc_t cloud_snow = {
   .data_size = sizeof(cloud_snow_map),
   .data = cloud_snow_map,
 };
-

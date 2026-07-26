@@ -129,4 +129,3 @@ const lv_image_dsc_t wind = {
   .data_size = sizeof(wind_map),
   .data = wind_map,
 };
-

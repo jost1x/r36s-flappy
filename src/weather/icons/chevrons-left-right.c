@@ -129,4 +129,3 @@ const lv_image_dsc_t chevrons_left_right = {
   .data_size = sizeof(chevrons_left_right_map),
   .data = chevrons_left_right_map,
 };
-

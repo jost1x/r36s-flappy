@@ -129,4 +129,3 @@ const lv_image_dsc_t cloud_lightning = {
   .data_size = sizeof(cloud_lightning_map),
   .data = cloud_lightning_map,
 };
-

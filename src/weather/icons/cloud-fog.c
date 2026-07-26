@@ -129,4 +129,3 @@ const lv_image_dsc_t cloud_fog = {
   .data_size = sizeof(cloud_fog_map),
   .data = cloud_fog_map,
 };
-

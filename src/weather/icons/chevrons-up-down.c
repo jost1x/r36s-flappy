@@ -129,4 +129,3 @@ const lv_image_dsc_t chevrons_up_down = {
   .data_size = sizeof(chevrons_up_down_map),
   .data = chevrons_up_down_map,
 };
-

@@ -129,4 +129,3 @@ const lv_image_dsc_t cloud_rain = {
   .data_size = sizeof(cloud_rain_map),
   .data = cloud_rain_map,
 };
-

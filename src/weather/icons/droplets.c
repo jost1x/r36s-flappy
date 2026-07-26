@@ -129,4 +129,3 @@ const lv_image_dsc_t droplets = {
   .data_size = sizeof(droplets_map),
   .data = droplets_map,
 };
-
