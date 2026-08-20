@@ -23,7 +23,7 @@ cmake --build . -j$(nproc)
 
 # Crear alias para fácil ejecución
 mkdir -p "../$OUTPUT_DIR"
-cp r36s-hello "../$OUTPUT_DIR/"
+cp r36s-flappy "../$OUTPUT_DIR/"
 
 echo "✓ Compilación completada"
-echo "Ejecuta: ./$OUTPUT_DIR/r36s-hello"
+echo "Ejecuta: ./$OUTPUT_DIR/r36s-flappy"

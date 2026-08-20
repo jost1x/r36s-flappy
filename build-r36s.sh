@@ -24,8 +24,8 @@ docker buildx build \
     --file "$SCRIPT_DIR/Dockerfile.r36s" \
     "$SCRIPT_DIR"
 
-test -f "$OUTPUT_DIR/r36s-hello"
-chmod +x "$OUTPUT_DIR/r36s-hello"
+test -f "$OUTPUT_DIR/r36s-flappy"
+chmod +x "$OUTPUT_DIR/r36s-flappy"
 
-echo "✓ Compilación completada: ./bin/r36s-arm64/r36s-hello"
+echo "✓ Compilación completada: ./bin/r36s-arm64/r36s-flappy"
 echo "Ahora ejecuta: ./deploy-r36s.sh"

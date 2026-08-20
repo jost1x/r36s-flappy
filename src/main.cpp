@@ -1,14 +1,15 @@
-#include <spdlog/spdlog.h>
+#include <exception>
+#include <iostream>
 
-#include "include/app.h"
+#include "app.h"
 
-int main(int argc, char* argv[]) {
+int main() {
     try {
         App app;
         app.run();
         return 0;
-    } catch (const std::exception& e) {
-        spdlog::critical("Fatal error: {}", e.what());
+    } catch (const std::exception& error) {
+        std::cerr << "Fatal error: " << error.what() << '\n';
         return 1;
     }
 }

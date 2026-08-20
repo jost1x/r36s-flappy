@@ -1,6 +1,13 @@
-# Third-party assets
+# Third-party dependencies
 
-The weather icon assets in `src/weather/icons/` are derived from the
-[Lucide](https://lucide.dev/) icon set and are distributed under the ISC
-License. They were rasterized to LVGL A8 image descriptors for offline use on
-the R36S.
+## raylib
+
+- **URL**: https://www.raylib.com/
+- **License**: zlib (https://github.com/raysan5/raylib/blob/master/LICENSE)
+- **Version**: 6.0
+
+## raygui
+
+- **URL**: https://github.com/raysan5/raygui
+- **License**: zlib (https://github.com/raysan5/raygui/blob/master/LICENSE)
+- **Version**: 4.5

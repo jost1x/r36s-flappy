@@ -2,64 +2,31 @@
 
 ## Requisitos
 
-- CMake 3.21 o superior
+- CMake 3.13 o superior
 - Compilador C++17
-- SDL2, libcurl y nlohmann-json
-- clang-format y clang-tidy
-- vcpkg para resolver dependencias de forma reproducible (recomendado)
+- SDL2 y las cabeceras de Wayland (`libsdl2-dev`, `libwayland-dev`, `libxkbcommon-dev` y `libegl1-mesa-dev` en Debian/Ubuntu)
 
-LVGL 9.2.2 se descarga automáticamente durante la configuración de CMake.
-
-## Hooks de Git
-
-Activa los hooks versionados una vez después de clonar el repositorio:
+CMake descarga y compila raylib 6.0 y raygui 4.5 automáticamente vía FetchContent.
 
 ```sh
-make -f Makefile-cpp hooks
-```
-
-Los hooks `pre-commit` y `pre-push` ejecutan la misma validación: comprobación de formato con `clang-format`, análisis estático con `clang-tidy`, compilación y `ctest`. Cancelan la operación si alguna comprobación falla.
-
-Para ejecutar la validación de `pre-commit` manualmente:
-
-```sh
-make -f Makefile-cpp pre-commit
-```
-
-También están disponibles por separado `make -f Makefile-cpp format`, `lint` y `test`; `verify` ejecuta las tres comprobaciones.
-
-## Configuración con vcpkg
-
-```sh
-git clone https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
-"$HOME/vcpkg/bootstrap-vcpkg.sh"
-export VCPKG_ROOT="$HOME/vcpkg"
-
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
+./build/r36s-flappy
 ```
 
-## Atajos del proyecto
+Los atajos `make local`, `make release`, `make run` y `make r36s` cubren los flujos habituales. `make run` usa Wayland de forma nativa cuando la sesión local es Wayland, evitando una capa XWayland problemática.
+
+Para probar el modo de pantalla completa localmente:
 
 ```sh
-make local    # configura y compila una build local de depuración
-make release  # compila una build local optimizada
-make run      # compila y ejecuta build/r36s-hello
-make clean    # elimina artefactos locales generados
-```
-
-El ejecutable local se genera en `build/r36s-hello`. Para ejecutar a pantalla completa:
-
-```sh
-R36S_FULLSCREEN=1 ./build/r36s-hello
+R36S_FULLSCREEN=1 ./build/r36s-flappy
 ```
 
 ## Validación
 
-Antes de enviar cambios, ejecuta como mínimo:
-
 ```sh
-cmake --build build -j1
+make verify    # format + lint + tests
+make format    # solo clang-format
+make lint      # solo clang-tidy
+make test      # solo tests
 ```
