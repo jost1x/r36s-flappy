@@ -6,6 +6,7 @@
 #include <string>
 
 #include "bgm_manager.h"
+#include "game/sound_manager.h"
 #include "game_logic.h"
 #include "game_renderer.h"
 #include "input_handler.h"
@@ -13,6 +14,7 @@
 #include "screen_transition.h"
 #include "settings.h"
 #include "sprite_manager.h"
+#include "ui_action.h"
 #include "ui_renderer.h"
 
 class App {
@@ -20,12 +22,11 @@ class App {
     void run();
 
    private:
-    void runGameLoop();
-    void handleInput();
+    UiAction handleInput(const UiRenderer& uiRenderer);
+    void handleUiAction(UiAction action);
     void handleFlap();
     void handleCollision();
     void handlePause();
-    void handleOptionsMenu();
 
     void loadBestScore();
     void saveBestScore() const;
@@ -41,11 +42,11 @@ class App {
     SpriteManager spriteMgr_;
     ParallaxBackground bg_;
     BgmManager bgm_;
+    SoundManager soundMgr_;
     ScreenTransition transition_;
     GameSettings settings_;
     Font font_{};
 
     int bestScore_ = 0;
     std::string scorePath_;
-    int optionsSelection_ = 0;
 };

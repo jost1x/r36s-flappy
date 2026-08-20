@@ -51,32 +51,39 @@ void UiRenderer::drawCenteredText(const std::string& text, int y, int fontSize, 
     drawText(text, x, y, fontSize, color);
 }
 
-void UiRenderer::drawReadyMenu(int bestScore) const {
+UiAction UiRenderer::drawReadyMenu(int bestScore) const {
     Rectangle panel{ReadyPanel::x, ReadyPanel::y, ReadyPanel::w, ReadyPanel::h};
     GuiPanel(panel, "FLAPPY BIRD");
     GuiLabel({176.0F, 142.0F, 288.0F, 24.0F}, "CRUZA LAS TUBERIAS Y SUPERA TU RECORD");
     drawText(TextFormat("RECORD: %02i", bestScore), 260, 175, 20, kInk);
     if (GuiButton({222.0F, 190.0F, 196.0F, 44.0F}, "JUGAR")) {
+        return UiAction::Play;
     }
     GuiLabel({180.0F, 258.0F, 280.0F, 22.0F}, "A/B, ESPACIO O CLIC PARA VOLAR");
     if (GuiButton({222.0F, 290.0F, 196.0F, 32.0F}, "OPCIONES")) {
+        return UiAction::Options;
     }
+    return UiAction::None;
 }
 
-void UiRenderer::drawPauseMenu(bool muted) const {
+UiAction UiRenderer::drawPauseMenu(bool muted) const {
     DrawRectangle(0, 0, Config::kScreenWidth, Config::kScreenHeight, Fade(BLACK, 0.35F));
     Rectangle panel{PausePanel::x, PausePanel::y, PausePanel::w, PausePanel::h};
     GuiPanel(panel, "PAUSA");
     if (GuiButton({222.0F, 194.0F, 196.0F, 40.0F}, "CONTINUAR")) {
+        return UiAction::Continue;
     }
     if (GuiButton({222.0F, 248.0F, 196.0F, 40.0F}, "REINICIAR")) {
+        return UiAction::Restart;
     }
     std::string muteText = muted ? "ACTIVAR SONIDO" : "SILENCIAR";
     if (GuiButton({222.0F, 300.0F, 196.0F, 36.0F}, muteText.c_str())) {
+        return UiAction::ToggleMute;
     }
+    return UiAction::None;
 }
 
-void UiRenderer::drawGameOverMenu(const GameLogic& logic, int bestScore) const {
+UiAction UiRenderer::drawGameOverMenu(const GameLogic& logic, int bestScore) const {
     Rectangle panel{GameOverPanel::x, GameOverPanel::y, GameOverPanel::w, GameOverPanel::h};
     GuiPanel(panel, "FIN DEL VUELO");
     GuiLabel({190.0F, 165.0F, 260.0F, 30.0F},
@@ -89,12 +96,15 @@ void UiRenderer::drawGameOverMenu(const GameLogic& logic, int bestScore) const {
     }
 
     if (GuiButton({222.0F, 234.0F, 196.0F, 42.0F}, "REINTENTAR")) {
+        return UiAction::Retry;
     }
     if (GuiButton({222.0F, 290.0F, 196.0F, 36.0F}, "MENU")) {
+        return UiAction::Menu;
     }
+    return UiAction::None;
 }
 
-void UiRenderer::drawOptionsMenu(GameSettings& settings, int& selection) const {
+UiAction UiRenderer::drawOptionsMenu(GameSettings& settings) const {
     DrawRectangle(0, 0, Config::kScreenWidth, Config::kScreenHeight, Fade(BLACK, 0.5F));
     Rectangle panel{142.0F, 60.0F, 356.0F, 340.0F};
     GuiPanel(panel, "OPCIONES");
@@ -119,8 +129,9 @@ void UiRenderer::drawOptionsMenu(GameSettings& settings, int& selection) const {
     y += 40.0F;
 
     if (GuiButton({222.0F, y, 196.0F, 36.0F}, "VOLVER")) {
+        return UiAction::Back;
     }
-    (void)selection;
+    return UiAction::None;
 }
 
 const char* UiRenderer::getMedal(const GameLogic& logic) const {

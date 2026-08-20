@@ -2,12 +2,19 @@
 
 #include <raylib.h>
 
+#ifdef R36S_DRM
+#include <vector>
+#endif
+
 class InputHandler {
    public:
     InputHandler();
+    ~InputHandler();
 
     void update();
 
+    bool hasGamepad() const;
+    int gamepadIndex() const;
     bool isFlapPressed() const;
     bool isQuitPressed() const;
     bool isMutePressed() const;
@@ -16,16 +23,21 @@ class InputHandler {
     bool isFullscreenTogglePressed() const;
 
    private:
-    bool prevSpace_ = false;
-    bool prevEnter_ = false;
-    bool prevUp_ = false;
-    bool prevA_ = false;
-    bool prevB_ = false;
-    bool prevStart_ = false;
-    bool prevEscape_ = false;
-    bool prevM_ = false;
-    bool prevMiddleRight_ = false;
-    bool prevLShoulder_ = false;
-    bool prevRShoulder_ = false;
-    bool prevLeftClick_ = false;
+#ifdef R36S_DRM
+    void initializeRawGamepads();
+    void pollRawGamepads();
+    std::vector<int> rawGamepadFds_;
+    bool rawGamepadsInitialized_ = false;
+    bool rawStartPressed_ = false;
+    bool rawSelectPressed_ = false;
+    bool rawStartPressedEvent_ = false;
+    bool rawSelectPressedEvent_ = false;
+#endif
+
+    static constexpr int kMaxGamepads = 4;
+
+    int gamepadIndex_ = -1;
+    int lastLoggedGamepadIndex_ = -2;
+    bool lastLoggedStart_ = false;
+    bool lastLoggedSelect_ = false;
 };

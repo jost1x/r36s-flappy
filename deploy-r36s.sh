@@ -52,6 +52,25 @@ echo "Conectando a $SSH_TARGET:$R36S_PORT..."
 # Crear directorios remotos
 ssh "${SSH_OPTIONS[@]}" -p "$R36S_PORT" "$SSH_TARGET" "mkdir -p '$R36S_BIN_PATH' '$R36S_PATH/assets'"
 
+# Cerrar una instancia anterior antes de reemplazar el binario.
+echo -e "${YELLOW}Cerrando r36s-flappy si está ejecutándose...${NC}"
+ssh "${SSH_OPTIONS[@]}" -p "$R36S_PORT" "$SSH_TARGET" '
+    pids=$(pgrep -x r36s-flappy || true)
+    if [ -n "$pids" ]; then
+        echo "Instancias encontradas: $pids"
+        kill -TERM $pids 2>/dev/null || true
+        for pid in $pids; do
+            timeout 3 tail --pid="$pid" -f /dev/null 2>/dev/null || true
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -KILL "$pid" 2>/dev/null || true
+            fi
+        done
+        echo "Instancia anterior cerrada"
+    else
+        echo "No había ninguna instancia abierta"
+    fi
+'
+
 # Copiar binario
 echo -e "${YELLOW}Copiando binario...${NC}"
 scp "${SSH_OPTIONS[@]}" -P "$R36S_PORT" "$R36S_BINARY" "$SSH_TARGET:$R36S_BIN_PATH/r36s-flappy"

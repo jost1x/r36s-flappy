@@ -39,6 +39,13 @@ void App::run() {
     loadFont();
     spriteMgr_.load();
     bg_.setCloudTexture(spriteMgr_.getCloudSprite());
+
+    input_.update();
+    if (input_.hasGamepad()) {
+        std::cerr << "Gamepad detected: " << GetGamepadName(input_.gamepadIndex()) << "\n";
+    } else {
+        std::cerr << "No gamepad detected, using keyboard/mouse only\n";
+    }
     GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
     GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, ColorToInt(kInk));
     GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, ColorToInt(kInk));
@@ -55,22 +62,35 @@ void App::run() {
     GameRenderer gameRenderer{spriteMgr_, bg_, font_};
     UiRenderer uiRenderer{font_};
 
-    while (!WindowShouldClose() && !input_.isQuitPressed()) {
+    while (!WindowShouldClose()) {
         input_.update();
+        if (input_.isQuitPressed()) {
+            break;
+        }
         if (input_.isMutePressed()) {
+            soundMgr_.toggleMute();
         }
         if (input_.isOptionsPressed() && game_.getState() == GameState::Ready) {
             game_.setState(GameState::Options);
         }
         transition_.update(GetFrameTime());
-        handleInput();
+
+        UiAction uiAction = handleInput(uiRenderer);
+        if (uiAction != UiAction::None) {
+            handleUiAction(uiAction);
+        }
+
         game_.update(GetFrameTime());
         bg_.update(GetFrameTime(), Config::kScreenWidth);
+
+        if (game_.didScore()) {
+            soundMgr_.playPoint();
+        }
 
         BeginDrawing();
         ClearBackground(kSkyTop);
         gameRenderer.drawGameWorld(game_, Config::kScreenWidth, Config::kScreenHeight);
-        gameRenderer.drawHUD(game_, bestScore_, false);
+        gameRenderer.drawHUD(game_, bestScore_, soundMgr_.isMuted());
 
         switch (game_.getState()) {
             case GameState::Ready:
@@ -83,7 +103,7 @@ void App::run() {
                 uiRenderer.drawGameOverMenu(game_, bestScore_);
                 break;
             case GameState::Options:
-                uiRenderer.drawOptionsMenu(settings_, optionsSelection_);
+                uiRenderer.drawOptionsMenu(settings_);
                 break;
             case GameState::Playing:
                 break;
@@ -102,39 +122,109 @@ void App::run() {
     CloseWindow();
 }
 
-void App::handleInput() {
+UiAction App::handleInput(const UiRenderer& uiRenderer) {
     if (game_.getState() == GameState::Options) {
-        handleOptionsMenu();
-        return;
-    }
-
-    if (game_.getState() == GameState::Ready || game_.getState() == GameState::GameOver) {
-        if (input_.isFlapPressed()) {
-            if (game_.getState() == GameState::GameOver) game_.resetRound();
-            handleFlap();
+        if (input_.isFlapPressed() || input_.isPausePressed()) {
+            return UiAction::Back;
         }
-        return;
+        return uiRenderer.drawOptionsMenu(settings_);
     }
 
+    if (game_.getState() == GameState::Ready) {
+        if (input_.isFlapPressed()) {
+            return UiAction::Play;
+        }
+        if (input_.isOptionsPressed()) {
+            return UiAction::Options;
+        }
+        return uiRenderer.drawReadyMenu(bestScore_);
+    }
+
+    if (game_.getState() == GameState::GameOver) {
+        if (input_.isFlapPressed()) {
+            return UiAction::Retry;
+        }
+        if (input_.isOptionsPressed()) {
+            return UiAction::Menu;
+        }
+        return uiRenderer.drawGameOverMenu(game_, bestScore_);
+    }
+
+    if (game_.getState() == GameState::Paused) {
+        if (input_.isPausePressed()) {
+            return UiAction::Continue;
+        }
+        if (input_.isFlapPressed()) {
+            return UiAction::Restart;
+        }
+        return uiRenderer.drawPauseMenu(false);
+    }
+
+    // Playing state - check gamepad/keyboard input
     if (input_.isPausePressed()) {
         handlePause();
     }
 
-    if (game_.getState() == GameState::Playing) {
-        if (input_.isFlapPressed()) {
+    if (input_.isFlapPressed()) {
+        handleFlap();
+    }
+
+    if (game_.checkCollisions()) {
+        handleCollision();
+    }
+
+    return UiAction::None;
+}
+
+void App::handleUiAction(UiAction action) {
+    switch (action) {
+        case UiAction::Play:
+            game_.resetRound();
+            game_.setState(GameState::Playing);
             handleFlap();
-        }
-        if (game_.checkCollisions()) {
-            handleCollision();
-        }
+            break;
+        case UiAction::Options:
+            game_.setState(GameState::Options);
+            break;
+        case UiAction::Continue:
+            game_.setState(GameState::Playing);
+            bgm_.start();
+            break;
+        case UiAction::Restart:
+            game_.resetRound();
+            game_.setState(GameState::Playing);
+            handleFlap();
+            break;
+        case UiAction::Retry:
+            game_.resetRound();
+            game_.setState(GameState::Playing);
+            handleFlap();
+            break;
+        case UiAction::Menu:
+            game_.resetRound();
+            game_.setState(GameState::Ready);
+            break;
+        case UiAction::ToggleMute:
+            soundMgr_.toggleMute();
+            break;
+        case UiAction::Back:
+            applySettings();
+            game_.setState(GameState::Ready);
+            break;
+        case UiAction::None:
+            break;
     }
 }
 
-void App::handleFlap() { game_.getBird().flap(Config::kFlapVelocity); }
+void App::handleFlap() {
+    game_.getBird().flap(Config::kFlapVelocity);
+    soundMgr_.playFlap();
+}
 
 void App::handleCollision() {
     game_.setState(GameState::GameOver);
     game_.setCollisionFlash(0.3F);
+    soundMgr_.playHit();
     triggerCollisionVibration();
     bgm_.stop();
 }
@@ -147,13 +237,6 @@ void App::handlePause() {
     } else {
         game_.setState(GameState::Paused);
         bgm_.stop();
-    }
-}
-
-void App::handleOptionsMenu() {
-    if (input_.isFlapPressed() || input_.isPausePressed()) {
-        applySettings();
-        game_.setState(GameState::Ready);
     }
 }
 
@@ -197,8 +280,9 @@ uint32_t App::computeDailySeed() const {
 }
 
 void App::triggerCollisionVibration() const {
-    if (settings_.vibrationEnabled && IsGamepadAvailable(0)) {
-        SetGamepadVibration(0, Config::kCollisionVibrationStrength, Config::kCollisionVibrationStrength,
+    if (settings_.vibrationEnabled && input_.hasGamepad()) {
+        SetGamepadVibration(input_.gamepadIndex(), Config::kCollisionVibrationStrength,
+                            Config::kCollisionVibrationStrength,
                             Config::kCollisionVibrationDuration);
     }
 }

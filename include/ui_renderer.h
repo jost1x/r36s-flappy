@@ -6,15 +6,16 @@
 
 #include "game_logic.h"
 #include "settings.h"
+#include "ui_action.h"
 
 class UiRenderer {
    public:
     UiRenderer(const Font& font);
 
-    void drawReadyMenu(int bestScore) const;
-    void drawPauseMenu(bool muted) const;
-    void drawGameOverMenu(const GameLogic& logic, int bestScore) const;
-    void drawOptionsMenu(GameSettings& settings, int& selection) const;
+    UiAction drawReadyMenu(int bestScore) const;
+    UiAction drawPauseMenu(bool muted) const;
+    UiAction drawGameOverMenu(const GameLogic& logic, int bestScore) const;
+    UiAction drawOptionsMenu(GameSettings& settings) const;
 
     const char* getMedal(const GameLogic& logic) const;
     Color getMedalColor(const GameLogic& logic) const;

@@ -35,6 +35,7 @@ class GameLogic {
     float getScorePopupTimer() const { return scorePopupTimer_; }
     float getCollisionFlash() const { return collisionFlash_; }
     int getPrevScore() const { return prevScore_; }
+    bool didScore() const { return pipeManager_.getScore() > prevScore_; }
 
     void setScorePopupY(float y) { scorePopupY_ = y; }
     void setScorePopupTimer(float t) { scorePopupTimer_ = t; }
