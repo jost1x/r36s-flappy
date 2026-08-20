@@ -1,13 +1,11 @@
 .PHONY: all build debug release clean install deploy hooks pre-commit format lint test verify help
 
 NATIVE_ARCH := $(shell uname -m)
-NATIVE_BIN := bin/$(NATIVE_ARCH)/r36s-hello
-BUILD_BIN := build/r36s-hello
-CPP_SOURCES := $(shell find include src tests -type f \( -name '*.cpp' -o -name '*.h' \) | sort)
-CPP_FILES := $(shell find src tests -type f -name '*.cpp' | sort)
+BUILD_BIN := build/r36s-flappy
+CPP_SOURCES := $(shell find src -name '*.cpp' -o -name '*.h' | sort)
 
 help:
-	@echo "R36S App - C++ Build Targets"
+	@echo "R36S Flappy Bird - Build Targets"
 	@echo "============================"
 	@echo "make build      - Compilación local (debug)"
 	@echo "make release    - Compilación optimizada"
@@ -20,7 +18,7 @@ help:
 install:
 	@echo "Instalando dependencias..."
 	sudo apt update
-	sudo apt install -y build-essential cmake git libsdl2-dev libsdl2-ttf-dev fonts-dejavu-core
+	sudo apt install -y build-essential cmake git libsdl2-dev libegl1-mesa-dev libwayland-dev libx11-dev libxext-dev libxft-dev libxkbcommon-dev
 
 hooks:
 	@git config core.hooksPath .githooks
@@ -34,11 +32,11 @@ format:
 
 lint:
 	@cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	@clang-tidy -p build --warnings-as-errors='*' $(CPP_FILES)
+	@clang-tidy -p build --warnings-as-errors='*' $(CPP_SOURCES)
 
 test:
 	@cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	@cmake --build build -j1
+	@cmake --build build -j$$(nproc)
 	@ctest --test-dir build --output-on-failure
 
 verify: format lint test
@@ -63,11 +61,15 @@ arm64:
 clean:
 	@echo "Limpiando..."
 	@rm -rf build
-	@rm -f $(NATIVE_BIN)
+	@rm -rf bin/r36s-arm64
 
 run: build
 	@echo "Ejecutando..."
-	@./$(BUILD_BIN)
+	@if [ "$$XDG_SESSION_TYPE" = "wayland" ]; then \
+		SDL_VIDEODRIVER=wayland ./$(BUILD_BIN); \
+	else \
+		./$(BUILD_BIN); \
+	fi
 
 deploy: arm64
 	@bash deploy-r36s.sh

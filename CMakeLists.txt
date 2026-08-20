@@ -1,121 +1,99 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.13)
 
-# The toolchain must be selected before project() so CMake can discover
-# packages installed through vcpkg during its first configuration pass.
-if(DEFINED ENV{VCPKG_ROOT})
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-endif()
-
-# Configure a native ARM64 toolchain before project() when vcpkg is not used.
-option(BUILD_FOR_ARM64 "Cross-compile for ARM64" OFF)
-if(BUILD_FOR_ARM64 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_SYSTEM_NAME Linux)
-    set(CMAKE_SYSTEM_PROCESSOR aarch64)
-    set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
-    set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
-endif()
-
-project(r36s-app-cpp LANGUAGES C CXX)
+project(r36s-flappy LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(CTest)
 
-# Find packages
-find_package(SDL2 REQUIRED)
-find_package(CURL REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
+option(R36S_DRM "Use the raylib DRM/KMS backend for the R36S" OFF)
+option(EMBED_ASSETS "Embed assets into the binary" OFF)
 
-# LVGL is fetched from its upstream release because the vcpkg registry used by
-# the R36S toolchain does not currently publish an lvgl port.
 include(FetchContent)
-# LVGL auxiliary targets (for example ThorVG) also include lv_conf.h.
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-FetchContent_Declare(lvgl
-    URL https://github.com/lvgl/lvgl/archive/refs/tags/v9.2.2.tar.gz
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-set(LV_CONF_BUILD_DISABLE_EXAMPLES ON CACHE BOOL "" FORCE)
-set(LV_CONF_BUILD_DISABLE_DEMOS ON CACHE BOOL "" FORCE)
-set(LV_CONF_BUILD_DISABLE_THORVG_INTERNAL ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(lvgl)
-target_compile_definitions(lvgl PUBLIC
-    LV_CONF_INCLUDE_SIMPLE
-    LV_DRAW_SW_SUPPORT_A8=1
-)
-target_include_directories(lvgl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Create executable
-add_executable(r36s-hello
+if(R36S_DRM)
+    add_library(raylib INTERFACE IMPORTED)
+    target_include_directories(raylib INTERFACE /opt/raylib/src)
+    target_link_libraries(raylib INTERFACE /tmp/raylib-build/raylib/libraylib.a drm gbm EGL GLESv2 pthread m dl)
+else()
+    set(PLATFORM SDL CACHE STRING "raylib platform backend" FORCE)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(raylib
+        URL https://github.com/raysan5/raylib/archive/refs/tags/6.0.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(raylib)
+endif()
+
+if(R36S_DRM)
+    set(RAYGUI_SRC_DIR "/opt/raygui/src")
+else()
+    FetchContent_Declare(raygui
+        URL https://github.com/raysan5/raygui/archive/refs/tags/4.0.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(raygui)
+    set(RAYGUI_SRC_DIR ${raygui_SOURCE_DIR}/src)
+endif()
+
+set(APP_SOURCES
     src/main.cpp
     src/app.cpp
-    src/input_manager.cpp
-    src/weather/weather_client.cpp
-    src/weather/weather_locations.cpp
-    src/weather/weather_parser.cpp
-    src/weather/settings_store.cpp
-    src/weather/weather_screen.cpp
-    src/weather/weather_screen_layout.cpp
-    src/weather/weather_screen_view.cpp
-    src/fonts/r36s_font_14.c
-    src/fonts/r36s_font_16.c
-    src/fonts/r36s_font_20.c
-    src/fonts/r36s_font_48.c
-    src/weather/icons/sun.c
-    src/weather/icons/cloud-sun.c
-    src/weather/icons/cloud.c
-    src/weather/icons/cloud-rain.c
-    src/weather/icons/cloud-snow.c
-    src/weather/icons/cloud-fog.c
-    src/weather/icons/cloud-lightning.c
-    src/weather/icons/droplets.c
-    src/weather/icons/wind.c
-    src/weather/icons/chevrons-up-down.c
-    src/weather/icons/chevrons-left-right.c
-    src/weather/icons/circle.c
+    src/input_handler.cpp
+    src/sprite_manager.cpp
+    src/parallax_background.cpp
+    src/screen_transition.cpp
+    src/bgm_manager.cpp
+    src/settings.cpp
+    src/audio_gen.cpp
+    src/game_logic.cpp
+    src/game_renderer.cpp
+    src/ui_renderer.cpp
+    src/game/bird.cpp
+    src/game/pipe_manager.cpp
+    src/game/particle.cpp
+    src/game/sound_manager.cpp
 )
 
-# Include directories
-target_include_directories(r36s-hello PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-# Link libraries
-target_link_libraries(r36s-hello PRIVATE
-    SDL2::SDL2
-    lvgl
-    CURL::libcurl
-    nlohmann_json::nlohmann_json
-    fmt::fmt
-    spdlog::spdlog
-)
-
-# Compiler flags
-if(UNIX AND NOT APPLE)
-    target_compile_options(r36s-hello PRIVATE -Wall -Wextra -O2)
-endif()
-
-# Optional: Full-screen flag for R36S
-option(R36S_FULLSCREEN "Build for fullscreen R36S display" OFF)
-if(R36S_FULLSCREEN)
-    target_compile_definitions(r36s-hello PRIVATE R36S_FULLSCREEN=1)
-endif()
-
-include(CTest)
-if(BUILD_TESTING)
-    add_executable(weather_core_tests
-        tests/weather_core_tests.cpp
-        tests/icon_render_test.cpp
-        src/weather/weather_client.cpp
-        src/weather/weather_locations.cpp
-        src/weather/weather_parser.cpp
-        src/weather/settings_store.cpp
-        src/weather/icons/cloud.c
+if(EMBED_ASSETS)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    set(EMBEDDED_HEADER ${CMAKE_CURRENT_BINARY_DIR}/generated/embedded_assets.h)
+    add_custom_command(
+        OUTPUT ${EMBEDDED_HEADER}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+        COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_assets.py
+            ${EMBEDDED_HEADER}
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/Montserrat-Medium.ttf montserrat_font
+        DEPENDS assets/Montserrat-Medium.ttf scripts/embed_assets.py
+        COMMENT "Embedding assets..."
     )
-    target_include_directories(weather_core_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    target_link_libraries(weather_core_tests PRIVATE CURL::libcurl lvgl nlohmann_json::nlohmann_json fmt::fmt spdlog::spdlog)
-    add_test(NAME weather_core_tests COMMAND weather_core_tests)
+    list(APPEND APP_SOURCES ${EMBEDDED_HEADER})
+    set_source_files_properties(${EMBEDDED_HEADER} PROPERTIES GENERATED TRUE)
+endif()
+
+add_executable(r36s-flappy ${APP_SOURCES})
+
+target_include_directories(r36s-flappy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(r36s-flappy SYSTEM PRIVATE ${RAYGUI_SRC_DIR})
+if(EMBED_ASSETS)
+    target_include_directories(r36s-flappy PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+    target_compile_definitions(r36s-flappy PRIVATE EMBEDDED_ASSETS)
+endif()
+target_link_libraries(r36s-flappy PRIVATE raylib stdc++fs)
+
+if(NOT EMBED_ASSETS)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+if(UNIX AND NOT APPLE)
+    target_compile_options(r36s-flappy PRIVATE -Wall -Wextra -Wpedantic -O2)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(game_tests tests/game_tests.cpp src/game/bird.cpp src/game/pipe_manager.cpp src/game/particle.cpp)
+    target_include_directories(game_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(game_tests PRIVATE raylib)
+    add_test(NAME game_tests COMMAND game_tests)
 endif()

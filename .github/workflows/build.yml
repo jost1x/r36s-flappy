@@ -2,14 +2,59 @@ name: build
 
 on:
   push:
+    branches: [main, master]
   pull_request:
+    branches: [main, master]
 
 jobs:
-  local-build:
+  validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ clang-format clang-tidy libcurl4-openssl-dev libsdl2-dev nlohmann-json3-dev libfmt-dev libspdlog-dev
-      - name: Validate
-        run: make -f Makefile-cpp verify
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ clang-format clang-tidy libsdl2-dev python3
+      - name: Format check
+        run: make -f Makefile-cpp format
+      - name: Configure
+        run: cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+      - name: Lint
+        run: clang-tidy -p build --warnings-as-errors='*' $(find src -name '*.cpp' -o -name '*.h' | sort)
+      - name: Build
+        run: cmake --build build -j$(nproc)
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  build-arm64:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build ARM64 binary
+        run: make r36s
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: r36s-flappy-arm64
+          path: bin/r36s-arm64/r36s-flappy
+          retention-days: 30
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [validate, build-arm64]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build ARM64 binary
+        run: make r36s
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/r36s-arm64/r36s-flappy
+          generate_release_notes: true
