@@ -3,14 +3,15 @@
 #include <raylib.h>
 
 #ifdef R36S_DRM
-#include <climits>
-#include <cstdio>
-#include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <climits>
+#include <cstdio>
+#include <cstring>
 #endif
 
 #include <iostream>
@@ -27,7 +28,7 @@ InputHandler::~InputHandler() {
 namespace {
 constexpr int kR36sSelectCode = BTN_TRIGGER_HAPPY1;
 constexpr int kR36sStartCode = BTN_TRIGGER_HAPPY2;
-}
+}  // namespace
 #endif
 
 void InputHandler::update() {
@@ -46,8 +47,8 @@ void InputHandler::update() {
 
     if (gamepadIndex_ != lastLoggedGamepadIndex_) {
         if (hasGamepad()) {
-            std::cerr << "[input] raylib gamepad index=" << gamepadIndex_ << " name=\""
-                      << GetGamepadName(gamepadIndex_) << "\"\n";
+            std::cerr << "[input] raylib gamepad index=" << gamepadIndex_ << " name=\"" << GetGamepadName(gamepadIndex_)
+                      << "\"\n";
         } else {
             std::cerr << "[input] raylib reports no gamepad\n";
         }
@@ -71,8 +72,7 @@ bool InputHandler::hasGamepad() const { return gamepadIndex_ >= 0; }
 int InputHandler::gamepadIndex() const { return gamepadIndex_; }
 
 bool InputHandler::isFlapPressed() const {
-    bool keyboard = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP) ||
-                    IsKeyPressed(KEY_W);
+    bool keyboard = IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W);
     bool mouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
     if (!hasGamepad()) return keyboard || mouse;
@@ -157,14 +157,12 @@ void InputHandler::initializeRawGamepads() {
             return (eventBits[code / bitsPerWord] >> (code % bitsPerWord)) & 1UL;
         };
         if (ioctl(fd, EVIOCGBIT(0, sizeof(eventBits)), eventBits) < 0) {
-            std::cerr << "[input] " << path << " event capability query failed: "
-                      << std::strerror(errno) << "\n";
+            std::cerr << "[input] " << path << " event capability query failed: " << std::strerror(errno) << "\n";
             close(fd);
             continue;
         }
         if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keyBits)), keyBits) < 0) {
-            std::cerr << "[input] " << path << " capability query failed: " << std::strerror(errno)
-                      << "\n";
+            std::cerr << "[input] " << path << " capability query failed: " << std::strerror(errno) << "\n";
             close(fd);
             continue;
         }
@@ -176,20 +174,18 @@ void InputHandler::initializeRawGamepads() {
             }
         }
         bool hasGamepadAxes = hasEvent(EV_ABS);
-        bool looksLikeGamepad = std::strstr(deviceName, "Gamepad") != nullptr ||
-                                std::strstr(deviceName, "gamepad") != nullptr;
+        bool looksLikeGamepad =
+            std::strstr(deviceName, "Gamepad") != nullptr || std::strstr(deviceName, "gamepad") != nullptr;
         bool looksLikeR36sKeys = std::strstr(deviceName, "odroidgo3-keys") != nullptr;
         if (!hasGamepadButton && !hasGamepadAxes && !looksLikeGamepad && !looksLikeR36sKeys) {
-            std::cerr << "[input] ignoring " << path << " name=\"" << deviceName
-                      << "\" (no gamepad buttons or axes)\n";
+            std::cerr << "[input] ignoring " << path << " name=\"" << deviceName << "\" (no gamepad buttons or axes)\n";
             close(fd);
             continue;
         }
         std::cerr << "[input] raw controller=" << path << " name=\"" << deviceName << "\""
                   << " BTN_START=" << hasKey(BTN_START) << " BTN_SELECT=" << hasKey(BTN_SELECT)
                   << " EV_ABS=" << hasGamepadAxes << " gamepad_name=" << looksLikeGamepad
-                  << " r36s_keys_name=" << looksLikeR36sKeys
-                  << "\n";
+                  << " r36s_keys_name=" << looksLikeR36sKeys << "\n";
         rawGamepadFds_.push_back(fd);
     }
     closedir(inputDirectory);
@@ -266,8 +262,8 @@ void InputHandler::pollRawGamepads() {
                     break;
             }
 
-            std::cerr << "[input] raw button code=" << event.code << " name=" << buttonName
-                      << " value=" << event.value << " (1=down, 0=up, 2=repeat)\n";
+            std::cerr << "[input] raw button code=" << event.code << " name=" << buttonName << " value=" << event.value
+                      << " (1=down, 0=up, 2=repeat)\n";
 
             bool pressed = event.value != 0;
             if (event.code == BTN_START || event.code == kR36sStartCode) {

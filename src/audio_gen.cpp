@@ -58,7 +58,7 @@ Sound generateBgmLoop(float volume, float duration) {
     for (int i = 0; i < sampleCount; ++i) {
         float t = static_cast<float>(i) / kSampleRate;
         int noteIndex = static_cast<int>(t / noteDuration) % kNoteCount;
-        float noteTime = t - noteIndex * noteDuration;
+        float noteTime = t - static_cast<float>(noteIndex) * noteDuration;
         float envelope = std::exp(-noteTime * 3.0F);
 
         float melodyFreq = kMelodyNotes[noteIndex];

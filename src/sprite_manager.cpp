@@ -48,17 +48,17 @@ void SpriteManager::generateBirdSprite() {
 
     int cx = kBirdSize / 2;
     int cy = kBirdSize / 2;
-    int r = 15;
+    float radius = 15.0F;
 
     for (int y = 0; y < kBirdSize; ++y) {
         for (int x = 0; x < kBirdSize; ++x) {
             int dx = x - cx;
             int dy = y - cy;
-            float dist = std::sqrt(dx * dx + dy * dy);
+            float dist = std::sqrt(static_cast<float>(dx * dx + dy * dy));
 
-            if (dist <= r) {
+            if (dist <= radius) {
                 ImageDrawPixel(&img, x, y, body);
-                if (dist <= r + 2) ImageDrawPixel(&img, x, y, outline);
+                if (dist <= radius + 2.0F) ImageDrawPixel(&img, x, y, outline);
             }
             if (dist <= 8 && dx < -3) {
                 ImageDrawPixel(&img, x, y, wing);

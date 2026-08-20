@@ -1,4 +1,4 @@
-.PHONY: all build debug release clean install deploy hooks pre-commit format lint test verify help
+.PHONY: all build debug release clean install deploy hooks pre-commit format format-fix lint test verify help
 
 NATIVE_ARCH := $(shell uname -m)
 BUILD_BIN := build/r36s-flappy
@@ -29,6 +29,9 @@ pre-commit:
 
 format:
 	@clang-format --dry-run --Werror $(CPP_SOURCES)
+
+format-fix:
+	@clang-format -i $(CPP_SOURCES)
 
 lint:
 	@cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON

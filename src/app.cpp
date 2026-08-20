@@ -282,8 +282,7 @@ uint32_t App::computeDailySeed() const {
 void App::triggerCollisionVibration() const {
     if (settings_.vibrationEnabled && input_.hasGamepad()) {
         SetGamepadVibration(input_.gamepadIndex(), Config::kCollisionVibrationStrength,
-                            Config::kCollisionVibrationStrength,
-                            Config::kCollisionVibrationDuration);
+                            Config::kCollisionVibrationStrength, Config::kCollisionVibrationDuration);
     }
 }
 

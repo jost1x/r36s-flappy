@@ -38,7 +38,7 @@ void ParallaxBackground::draw(int screenWidth, int groundY) const {
         Color tint = WHITE;
         tint.a = static_cast<unsigned char>(layer.alpha * 255);
 
-        for (float drawX = x - texW; drawX < screenWidth + texW; drawX += texW) {
+        for (float drawX = x - texW; drawX < static_cast<float>(screenWidth) + texW; drawX += texW) {
             DrawTextureEx(layer.texture, Vector2{drawX, layer.yOffset}, 0.0F, 1.0F, tint);
         }
     }
