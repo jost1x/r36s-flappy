@@ -1,145 +1,223 @@
 #include "app.h"
 
-#include <lvgl.h>
-#include <spdlog/spdlog.h>
+#ifdef EMBEDDED_ASSETS
+#include "embedded_assets.h"
+#endif
 
-#include <vector>
+#define RAYGUI_IMPLEMENTATION
+#include <raygui.h>
 
-#include "input_manager.h"
-#include "weather/settings_store.h"
-#include "weather/weather_client.h"
-#include "weather/weather_screen.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 namespace {
-SDL_Renderer* gRenderer = nullptr;
-SDL_Texture* gTexture = nullptr;
-std::vector<uint8_t> gDrawBuffer;
-
-void sdlFlush(lv_display_t* display, const lv_area_t* area, uint8_t* pixels) {
-    const int width = area->x2 - area->x1 + 1;
-    const int height = area->y2 - area->y1 + 1;
-    SDL_Rect destination{area->x1, area->y1, width, height};
-    SDL_UpdateTexture(gTexture, &destination, pixels, width * 4);
-    if (lv_display_flush_is_last(display)) {
-        SDL_RenderClear(gRenderer);
-        SDL_RenderCopy(gRenderer, gTexture, nullptr, nullptr);
-        SDL_RenderPresent(gRenderer);
-    }
-    lv_display_flush_ready(display);
-}
+constexpr Color kInk{31, 61, 86, 255};
+constexpr Color kSkyTop{77, 185, 242, 255};
 }  // namespace
 
-App::App() = default;
-
-App::~App() { cleanup(); }
-
-bool App::initialize() {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) != 0) {
-        spdlog::error("Failed to initialize SDL: {}", SDL_GetError());
-        return false;
-    }
-
-    Uint32 windowFlags = SDL_WINDOW_SHOWN;
-    if (SDL_getenv("R36S_FULLSCREEN") != nullptr) windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT,
-                              windowFlags);
-    if (!window) {
-        spdlog::error("Failed to create window: {}", SDL_GetError());
-        return false;
-    }
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-    if (!renderer) {
-        spdlog::error("Failed to create renderer: {}", SDL_GetError());
-        return false;
-    }
-    SDL_RenderSetLogicalSize(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
-    frameTexture =
-        SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WINDOW_WIDTH, WINDOW_HEIGHT);
-    if (!frameTexture) {
-        spdlog::error("Failed to create LVGL texture: {}", SDL_GetError());
-        return false;
-    }
-
-    lv_init();
-    gRenderer = renderer;
-    gTexture = frameTexture;
-    gDrawBuffer.resize(static_cast<size_t>(WINDOW_WIDTH) * 48U * 4U);
-    auto* lvDisplay = lv_display_create(WINDOW_WIDTH, WINDOW_HEIGHT);
-    lv_display_set_color_format(lvDisplay, LV_COLOR_FORMAT_ARGB8888);
-    lv_display_set_buffers(lvDisplay, gDrawBuffer.data(), nullptr, gDrawBuffer.size(), LV_DISPLAY_RENDER_MODE_PARTIAL);
-    lv_display_set_flush_cb(lvDisplay, sdlFlush);
-    display = lvDisplay;
-
-    inputManager = std::make_unique<InputManager>();
-    inputManager->open();
-    weatherClient = std::make_unique<WeatherClient>();
-    settingsStore = std::make_unique<SettingsStore>();
-    settingsStore->load();
-    weatherScreen = std::make_unique<WeatherScreen>(*weatherClient, *settingsStore);
-    weatherScreen->show();
-    spdlog::info("LVGL weather app initialized");
-    return true;
-}
-
-void App::handleEvents() {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (inputManager->shouldExit(event)) {
-            running = false;
-            continue;
-        }
-        const Action action = inputManager->handleEvent(&event);
-        if (action != Action::None) weatherScreen->handleAction(static_cast<int>(action));
-    }
-}
-
-void App::update() { weatherScreen->update(); }
-
-void App::render() { lv_timer_handler(); }
-
-void App::cleanup() {
-    weatherScreen.reset();
-    if (settingsStore) settingsStore->save();
-    settingsStore.reset();
-    weatherClient.reset();
-    inputManager.reset();
-    if (display) {
-        lv_display_delete(static_cast<lv_display_t*>(display));
-        display = nullptr;
-    }
-    if (gTexture) {
-        gTexture = nullptr;
-    }
-    gRenderer = nullptr;
-    gDrawBuffer.clear();
-    lv_deinit();
-    if (frameTexture) {
-        SDL_DestroyTexture(frameTexture);
-        frameTexture = nullptr;
-    }
-    if (renderer) {
-        SDL_DestroyRenderer(renderer);
-        renderer = nullptr;
-    }
-    if (window) {
-        SDL_DestroyWindow(window);
-        window = nullptr;
-    }
-    SDL_Quit();
-}
-
 void App::run() {
-    if (!initialize()) return;
-    Uint32 previousTick = SDL_GetTicks();
-    while (running) {
-        const Uint32 frameStart = SDL_GetTicks();
-        lv_tick_inc(frameStart - previousTick);
-        previousTick = frameStart;
-        handleEvents();
-        update();
-        render();
-        const Uint32 elapsed = SDL_GetTicks() - frameStart;
-        if (elapsed < 16) SDL_Delay(16 - elapsed);
+    settings_ = GameSettings::load();
+
+    unsigned int windowFlags = FLAG_VSYNC_HINT;
+    if (std::getenv("R36S_FULLSCREEN") != nullptr || settings_.fullscreen) {
+        windowFlags |= FLAG_FULLSCREEN_MODE;
     }
+    SetConfigFlags(windowFlags);
+    InitWindow(Config::kScreenWidth, Config::kScreenHeight, "R36S Flappy Bird");
+    if (!IsWindowReady()) {
+        std::cerr << "raylib could not initialize the display backend\n";
+        return;
+    }
+    SetExitKey(KEY_NULL);
+    SetTargetFPS(Config::kTargetFPS);
+    InitAudioDevice();
+    loadFont();
+    spriteMgr_.load();
+    bg_.setCloudTexture(spriteMgr_.getCloudSprite());
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
+    GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, ColorToInt(kInk));
+    GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, ColorToInt(kInk));
+    GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(Color{255, 226, 80, 255}));
+    GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt(Color{255, 242, 150, 255}));
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, ColorToInt(Color{246, 175, 49, 255}));
+    loadBestScore();
+    game_.resetRound();
+
+    transition_.start(ScreenTransition::Type::FadeIn, 0.8F);
+    bgm_.setVolume(settings_.bgmVolume);
+    bgm_.start();
+
+    GameRenderer gameRenderer{spriteMgr_, bg_, font_};
+    UiRenderer uiRenderer{font_};
+
+    while (!WindowShouldClose() && !input_.isQuitPressed()) {
+        input_.update();
+        if (input_.isMutePressed()) {
+        }
+        if (input_.isOptionsPressed() && game_.getState() == GameState::Ready) {
+            game_.setState(GameState::Options);
+        }
+        transition_.update(GetFrameTime());
+        handleInput();
+        game_.update(GetFrameTime());
+        bg_.update(GetFrameTime(), Config::kScreenWidth);
+
+        BeginDrawing();
+        ClearBackground(kSkyTop);
+        gameRenderer.drawGameWorld(game_, Config::kScreenWidth, Config::kScreenHeight);
+        gameRenderer.drawHUD(game_, bestScore_, false);
+
+        switch (game_.getState()) {
+            case GameState::Ready:
+                uiRenderer.drawReadyMenu(bestScore_);
+                break;
+            case GameState::Paused:
+                uiRenderer.drawPauseMenu(false);
+                break;
+            case GameState::GameOver:
+                uiRenderer.drawGameOverMenu(game_, bestScore_);
+                break;
+            case GameState::Options:
+                uiRenderer.drawOptionsMenu(settings_, optionsSelection_);
+                break;
+            case GameState::Playing:
+                break;
+        }
+
+        transition_.drawOverlay();
+        gameRenderer.drawFPS(settings_.showFPS, Config::kScreenWidth, Config::kScreenHeight);
+        EndDrawing();
+    }
+
+    settings_.save();
+    saveBestScore();
+    spriteMgr_.unload();
+    unloadFont();
+    CloseAudioDevice();
+    CloseWindow();
+}
+
+void App::handleInput() {
+    if (game_.getState() == GameState::Options) {
+        handleOptionsMenu();
+        return;
+    }
+
+    if (game_.getState() == GameState::Ready || game_.getState() == GameState::GameOver) {
+        if (input_.isFlapPressed()) {
+            if (game_.getState() == GameState::GameOver) game_.resetRound();
+            handleFlap();
+        }
+        return;
+    }
+
+    if (input_.isPausePressed()) {
+        handlePause();
+    }
+
+    if (game_.getState() == GameState::Playing) {
+        if (input_.isFlapPressed()) {
+            handleFlap();
+        }
+        if (game_.checkCollisions()) {
+            handleCollision();
+        }
+    }
+}
+
+void App::handleFlap() { game_.getBird().flap(Config::kFlapVelocity); }
+
+void App::handleCollision() {
+    game_.setState(GameState::GameOver);
+    game_.setCollisionFlash(0.3F);
+    triggerCollisionVibration();
+    bgm_.stop();
+}
+
+void App::handlePause() {
+    transition_.start(ScreenTransition::Type::FadeOut, 0.3F);
+    if (game_.getState() == GameState::Paused) {
+        game_.setState(GameState::Playing);
+        bgm_.start();
+    } else {
+        game_.setState(GameState::Paused);
+        bgm_.stop();
+    }
+}
+
+void App::handleOptionsMenu() {
+    if (input_.isFlapPressed() || input_.isPausePressed()) {
+        applySettings();
+        game_.setState(GameState::Ready);
+    }
+}
+
+void App::loadFont() {
+#ifdef EMBEDDED_ASSETS
+    font_ = LoadFontFromMemory(".ttf", montserrat_font_data, montserrat_font_size, 48, nullptr, 0);
+    if (font_.texture.id != 0) return;
+    std::cerr << "Warning: Could not load embedded font, trying filesystem\n";
+#endif
+    std::string fontPath = resolveFontPath();
+    font_ = LoadFontEx(fontPath.c_str(), 48, nullptr, 0);
+    if (font_.texture.id == 0) {
+        std::cerr << "Warning: Could not load font from " << fontPath << ", using default\n";
+    }
+}
+
+void App::unloadFont() {
+    if (font_.texture.id != 0) {
+        UnloadFont(font_);
+    }
+}
+
+std::string App::resolveFontPath() const {
+    const char* exeDir = std::getenv("R36S_APP_DIR");
+    if (exeDir) {
+        std::filesystem::path p = std::string(exeDir) + "/assets/Montserrat-Medium.ttf";
+        if (std::filesystem::exists(p)) return p.string();
+    }
+    std::filesystem::path local = "assets/Montserrat-Medium.ttf";
+    if (std::filesystem::exists(local)) return local.string();
+    local = "../assets/Montserrat-Medium.ttf";
+    if (std::filesystem::exists(local)) return local.string();
+    return "assets/Montserrat-Medium.ttf";
+}
+
+uint32_t App::computeDailySeed() const {
+    std::time_t now = std::time(nullptr);
+    std::tm* local = std::localtime(&now);
+    return static_cast<uint32_t>(local->tm_year + 1900) * 10000 + static_cast<uint32_t>(local->tm_mon + 1) * 100 +
+           static_cast<uint32_t>(local->tm_mday);
+}
+
+void App::triggerCollisionVibration() const {
+    if (settings_.vibrationEnabled && IsGamepadAvailable(0)) {
+        SetGamepadVibration(0, Config::kCollisionVibrationStrength, Config::kCollisionVibrationStrength,
+                            Config::kCollisionVibrationDuration);
+    }
+}
+
+void App::applySettings() { bgm_.setVolume(settings_.bgmVolume); }
+
+void App::loadBestScore() {
+    const char* dataHome = std::getenv("XDG_DATA_HOME");
+    const char* home = std::getenv("HOME");
+    const std::filesystem::path base = dataHome ? dataHome : (home ? std::string(home) + "/.local/share" : ".");
+    scorePath_ = (base / "r36s-flappy" / "high-score.txt").string();
+    std::ifstream file(scorePath_);
+    if (file) file >> bestScore_;
+}
+
+void App::saveBestScore() const {
+    if (scorePath_.empty()) return;
+    std::error_code error;
+    std::filesystem::create_directories(std::filesystem::path(scorePath_).parent_path(), error);
+    std::ofstream file(scorePath_, std::ios::trunc);
+    if (file) file << bestScore_ << '\n';
 }

@@ -1,40 +1,51 @@
 #pragma once
 
-#include <SDL2/SDL.h>
+#include <raylib.h>
 
-#include <memory>
+#include <cstdint>
+#include <string>
 
-class WeatherClient;
-class WeatherScreen;
-class InputManager;
-class SettingsStore;
+#include "bgm_manager.h"
+#include "game_logic.h"
+#include "game_renderer.h"
+#include "input_handler.h"
+#include "parallax_background.h"
+#include "screen_transition.h"
+#include "settings.h"
+#include "sprite_manager.h"
+#include "ui_renderer.h"
 
 class App {
    public:
-    App();
-    ~App();
-
     void run();
 
    private:
-    bool initialize();
-    void handleEvents();
-    void update();
-    void render();
-    void cleanup();
+    void runGameLoop();
+    void handleInput();
+    void handleFlap();
+    void handleCollision();
+    void handlePause();
+    void handleOptionsMenu();
 
-    SDL_Window* window = nullptr;
-    SDL_Renderer* renderer = nullptr;
-    SDL_Texture* frameTexture = nullptr;
-    void* display = nullptr;
-    void* keypad = nullptr;
-    std::unique_ptr<WeatherClient> weatherClient;
-    std::unique_ptr<WeatherScreen> weatherScreen;
-    std::unique_ptr<InputManager> inputManager;
-    std::unique_ptr<SettingsStore> settingsStore;
-    bool running = true;
+    void loadBestScore();
+    void saveBestScore() const;
+    void loadFont();
+    void unloadFont();
+    std::string resolveFontPath() const;
+    uint32_t computeDailySeed() const;
+    void triggerCollisionVibration() const;
+    void applySettings();
 
-    static constexpr int WINDOW_WIDTH = 640;
-    static constexpr int WINDOW_HEIGHT = 480;
-    static constexpr const char* WINDOW_TITLE = "R36S - Weather App";
+    GameLogic game_;
+    InputHandler input_;
+    SpriteManager spriteMgr_;
+    ParallaxBackground bg_;
+    BgmManager bgm_;
+    ScreenTransition transition_;
+    GameSettings settings_;
+    Font font_{};
+
+    int bestScore_ = 0;
+    std::string scorePath_;
+    int optionsSelection_ = 0;
 };
