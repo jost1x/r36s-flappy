@@ -39,23 +39,10 @@ else()
 endif()
 
 set(APP_SOURCES
-    src/main.cpp
-    src/app.cpp
-    src/input_handler.cpp
-    src/menu_input.cpp
-    src/sprite_manager.cpp
-    src/parallax_background.cpp
-    src/screen_transition.cpp
-    src/bgm_manager.cpp
-    src/settings.cpp
-    src/audio_gen.cpp
-    src/game_logic.cpp
-    src/game_renderer.cpp
-    src/ui_renderer.cpp
-    src/game/bird.cpp
-    src/game/pipe_manager.cpp
-    src/game/particle.cpp
-    src/game/sound_manager.cpp
+    src/main.cpp src/app.cpp src/input_handler.cpp src/menu_input.cpp src/sprite_manager.cpp
+    src/parallax_background.cpp src/screen_transition.cpp src/bgm_manager.cpp src/settings.cpp
+    src/audio_gen.cpp src/game_logic.cpp src/game_renderer.cpp src/ui_renderer.cpp src/game/bird.cpp
+    src/game/pipe_manager.cpp src/game/particle.cpp src/game/sound_manager.cpp
 )
 
 if(EMBED_ASSETS)
@@ -67,7 +54,18 @@ if(EMBED_ASSETS)
         COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/scripts/embed_assets.py
             ${EMBEDDED_HEADER}
             ${CMAKE_CURRENT_SOURCE_DIR}/assets/Montserrat-Medium.ttf montserrat_font
-        DEPENDS assets/Montserrat-Medium.ttf scripts/embed_assets.py
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/background_day.png background_day
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/ground_tile.png ground_tile
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/bird_down.png bird_down
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/bird_up.png bird_up
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/pipe_top_body.png pipe_top_body
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/pipe_top_lip.png pipe_top_lip
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/pipe_bottom_body.png pipe_bottom_body
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/pipe_bottom_lip.png pipe_bottom_lip
+        DEPENDS assets/Montserrat-Medium.ttf assets/background_day.png assets/ground_tile.png
+                assets/bird_down.png assets/bird_up.png
+                assets/pipe_top_body.png assets/pipe_top_lip.png assets/pipe_bottom_body.png
+                assets/pipe_bottom_lip.png scripts/embed_assets.py
         COMMENT "Embedding assets..."
     )
     list(APPEND APP_SOURCES ${EMBEDDED_HEADER})
@@ -75,7 +73,6 @@ if(EMBED_ASSETS)
 endif()
 
 add_executable(r36s-flappy ${APP_SOURCES})
-
 target_include_directories(r36s-flappy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(r36s-flappy SYSTEM PRIVATE ${RAYGUI_SRC_DIR})
 if(EMBED_ASSETS)

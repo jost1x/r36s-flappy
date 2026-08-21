@@ -37,7 +37,8 @@ void App::run() {
     InitAudioDevice();
     loadFont();
     spriteMgr_.load();
-    bg_.setCloudTexture(spriteMgr_.getCloudSprite());
+    bg_.setSceneryTexture(spriteMgr_.getBackgroundSprite());
+    bg_.setGroundTexture(spriteMgr_.getGroundSprite());
 
     input_.update();
     if (input_.hasGamepad()) {
@@ -89,7 +90,9 @@ void App::run() {
         }
 
         game_.update(GetFrameTime());
-        bg_.update(GetFrameTime(), Config::kScreenWidth);
+        if (game_.getState() == GameState::Playing) {
+            bg_.update(GetFrameTime(), Config::kScreenWidth);
+        }
 
         if (game_.didScore()) {
             soundMgr_.playPoint();

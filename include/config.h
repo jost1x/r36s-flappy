@@ -7,10 +7,10 @@ struct Config {
     static constexpr int kScreenHeight = 480;
     static constexpr int kTargetFPS = 60;
 
-    static constexpr float kGroundY = 426.0F;
+    static constexpr float kGroundY = 368.0F;
     static constexpr float kBirdX = 176.0F;
     static constexpr float kBirdRadius = 15.0F;
-    static constexpr float kPipeWidth = 76.0F;
+    static constexpr float kPipeWidth = 78.0F;
     static constexpr float kPipeGap = 154.0F;
     static constexpr float kPipeSpeed = 174.0F;
     static constexpr float kGravity = 920.0F;

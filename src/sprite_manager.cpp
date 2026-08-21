@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <cmath>
 
+#ifdef EMBEDDED_ASSETS
+#include "embedded_assets.h"
+#endif
+
 namespace {
 constexpr int kBirdSize = 48;
 constexpr int kPipeBodyWidth = 76;
@@ -10,6 +14,7 @@ constexpr int kPipeBodyHeight = 256;
 constexpr int kPipeLipWidth = 90;
 constexpr int kPipeLipHeight = 28;
 constexpr int kCloudSize = 128;
+
 }  // namespace
 
 SpriteManager::SpriteManager() = default;
@@ -18,22 +23,103 @@ SpriteManager::~SpriteManager() { unload(); }
 
 void SpriteManager::load() {
     if (loaded_) return;
-    generateBirdSprite();
-    generatePipeSprites();
+    if (!loadSpriteAssets()) {
+        generateBirdSprite();
+        generatePipeSprites();
+    }
     generateCloudSprite();
     loaded_ = true;
 }
 
 void SpriteManager::unload() {
-    if (birdSprite_.id != 0) UnloadTexture(birdSprite_);
+    for (auto& birdSprite : birdSprites_) {
+        if (birdSprite.id != 0) UnloadTexture(birdSprite);
+        birdSprite = {};
+    }
+    if (topPipeBodySprite_.id != 0) UnloadTexture(topPipeBodySprite_);
+    if (topPipeLipSprite_.id != 0) UnloadTexture(topPipeLipSprite_);
+    if (backgroundSprite_.id != 0) UnloadTexture(backgroundSprite_);
+    if (groundSprite_.id != 0) UnloadTexture(groundSprite_);
     if (pipeBodySprite_.id != 0) UnloadTexture(pipeBodySprite_);
     if (pipeLipSprite_.id != 0) UnloadTexture(pipeLipSprite_);
     if (cloudSprite_.id != 0) UnloadTexture(cloudSprite_);
-    birdSprite_ = {};
     pipeBodySprite_ = {};
     pipeLipSprite_ = {};
+    topPipeBodySprite_ = {};
+    topPipeLipSprite_ = {};
+    backgroundSprite_ = {};
+    groundSprite_ = {};
     cloudSprite_ = {};
     loaded_ = false;
+}
+
+bool SpriteManager::loadSpriteAssets() {
+    Image birdImage{};
+    Image backgroundImage{};
+    Image groundImage{};
+    Image birdWingsUpImage{};
+    Image topPipeBodyImage{};
+    Image topPipeLipImage{};
+    Image pipeBodyImage{};
+    Image pipeLipImage{};
+#ifdef EMBEDDED_ASSETS
+    backgroundImage = LoadImageFromMemory(".png", background_day_data, static_cast<int>(background_day_size));
+    groundImage = LoadImageFromMemory(".png", ground_tile_data, static_cast<int>(ground_tile_size));
+    birdImage = LoadImageFromMemory(".png", bird_down_data, static_cast<int>(bird_down_size));
+    birdWingsUpImage = LoadImageFromMemory(".png", bird_up_data, static_cast<int>(bird_up_size));
+    topPipeBodyImage = LoadImageFromMemory(".png", pipe_top_body_data, static_cast<int>(pipe_top_body_size));
+    topPipeLipImage = LoadImageFromMemory(".png", pipe_top_lip_data, static_cast<int>(pipe_top_lip_size));
+    pipeBodyImage = LoadImageFromMemory(".png", pipe_bottom_body_data, static_cast<int>(pipe_bottom_body_size));
+    pipeLipImage = LoadImageFromMemory(".png", pipe_bottom_lip_data, static_cast<int>(pipe_bottom_lip_size));
+#else
+    if (!FileExists("assets/background_day.png") || !FileExists("assets/ground_tile.png") ||
+        !FileExists("assets/bird_down.png") || !FileExists("assets/bird_up.png") ||
+        !FileExists("assets/pipe_top_body.png") || !FileExists("assets/pipe_top_lip.png") ||
+        !FileExists("assets/pipe_bottom_body.png") || !FileExists("assets/pipe_bottom_lip.png")) {
+        return false;
+    }
+    backgroundImage = LoadImage("assets/background_day.png");
+    groundImage = LoadImage("assets/ground_tile.png");
+    birdImage = LoadImage("assets/bird_down.png");
+    birdWingsUpImage = LoadImage("assets/bird_up.png");
+    topPipeBodyImage = LoadImage("assets/pipe_top_body.png");
+    topPipeLipImage = LoadImage("assets/pipe_top_lip.png");
+    pipeBodyImage = LoadImage("assets/pipe_bottom_body.png");
+    pipeLipImage = LoadImage("assets/pipe_bottom_lip.png");
+#endif
+
+    if (backgroundImage.data == nullptr || groundImage.data == nullptr || birdImage.data == nullptr ||
+        birdWingsUpImage.data == nullptr || topPipeBodyImage.data == nullptr || topPipeLipImage.data == nullptr ||
+        pipeBodyImage.data == nullptr || pipeLipImage.data == nullptr) {
+        if (backgroundImage.data != nullptr) UnloadImage(backgroundImage);
+        if (groundImage.data != nullptr) UnloadImage(groundImage);
+        if (birdImage.data != nullptr) UnloadImage(birdImage);
+        if (birdWingsUpImage.data != nullptr) UnloadImage(birdWingsUpImage);
+        if (topPipeBodyImage.data != nullptr) UnloadImage(topPipeBodyImage);
+        if (topPipeLipImage.data != nullptr) UnloadImage(topPipeLipImage);
+        if (pipeBodyImage.data != nullptr) UnloadImage(pipeBodyImage);
+        if (pipeLipImage.data != nullptr) UnloadImage(pipeLipImage);
+        return false;
+    }
+
+    backgroundSprite_ = LoadTextureFromImage(backgroundImage);
+    groundSprite_ = LoadTextureFromImage(groundImage);
+    birdSprites_[0] = LoadTextureFromImage(birdImage);
+    birdSprites_[1] = LoadTextureFromImage(birdWingsUpImage);
+    topPipeBodySprite_ = LoadTextureFromImage(topPipeBodyImage);
+    topPipeLipSprite_ = LoadTextureFromImage(topPipeLipImage);
+    pipeBodySprite_ = LoadTextureFromImage(pipeBodyImage);
+    pipeLipSprite_ = LoadTextureFromImage(pipeLipImage);
+    UnloadImage(backgroundImage);
+    UnloadImage(groundImage);
+    UnloadImage(birdImage);
+    UnloadImage(birdWingsUpImage);
+    UnloadImage(topPipeBodyImage);
+    UnloadImage(topPipeLipImage);
+    UnloadImage(pipeBodyImage);
+    UnloadImage(pipeLipImage);
+    return backgroundSprite_.id != 0 && groundSprite_.id != 0 && birdSprites_[0].id != 0 && birdSprites_[1].id != 0 &&
+           topPipeBodySprite_.id != 0 && topPipeLipSprite_.id != 0 && pipeBodySprite_.id != 0 && pipeLipSprite_.id != 0;
 }
 
 void SpriteManager::generateBirdSprite() {
@@ -75,7 +161,7 @@ void SpriteManager::generateBirdSprite() {
         }
     }
 
-    birdSprite_ = LoadTextureFromImage(img);
+    birdSprites_[0] = LoadTextureFromImage(img);
     UnloadImage(img);
 }
 
@@ -90,6 +176,7 @@ void SpriteManager::generatePipeSprites() {
                             pipeDark);
     ImageDrawRectangleRec(&bodyImg, Rectangle{8, 3, 9, static_cast<float>(kPipeBodyHeight - 6)}, pipeLight);
     pipeBodySprite_ = LoadTextureFromImage(bodyImg);
+    topPipeBodySprite_ = LoadTextureFromImage(bodyImg);
     UnloadImage(bodyImg);
 
     Image lipImg = GenImageColor(kPipeLipWidth, kPipeLipHeight, pipeGreen);
@@ -97,6 +184,7 @@ void SpriteManager::generatePipeSprites() {
         &lipImg, Rectangle{0, 0, static_cast<float>(kPipeLipWidth), static_cast<float>(kPipeLipHeight)}, 3, pipeDark);
     ImageDrawRectangleRec(&lipImg, Rectangle{11, 3, 9, static_cast<float>(kPipeLipHeight - 6)}, pipeLight);
     pipeLipSprite_ = LoadTextureFromImage(lipImg);
+    topPipeLipSprite_ = LoadTextureFromImage(lipImg);
     UnloadImage(lipImg);
 }
 

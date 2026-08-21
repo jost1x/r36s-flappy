@@ -9,7 +9,7 @@ Juego tipo Flappy Bird para la consola R36S, programado en C++17 y renderizado c
 - Récord persistente en `$XDG_DATA_HOME/r36s-flappy/high-score.txt`
 - Controles para teclado, mouse y gamepad (R36S) — incluye shoulder buttons (L1/R1)
 - Build nativo (Linux) y cross-compile ARM64 para ArkOS
-- Sprites procedurales generados al inicio (sin archivos externos necesarios)
+- Sprites pixel-art de pájaro y tuberías, integrados desde el atlas incluido; fallback procedural si no está disponible
 - Fondo parallax con nubes en capas
 - Vibración del gamepad al colisionar
 - Sistema de medallas: bronce (5), plata (15), oro (30), diamante (50), platino (100)

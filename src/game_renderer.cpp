@@ -1,6 +1,7 @@
 #include "game_renderer.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace {
 constexpr Color kSkyTop{77, 185, 242, 255};
@@ -9,6 +10,18 @@ constexpr Color kInk{31, 61, 86, 255};
 constexpr Color kPipeGreen{73, 181, 67, 255};
 constexpr Color kPipeLight{129, 216, 91, 255};
 constexpr Color kPipeDark{39, 132, 52, 255};
+
+void drawTiledPipeBody(Texture2D texture, float x, float y, float height) {
+    float drawY = y;
+    float remaining = height;
+    while (remaining > 0.0F) {
+        float sliceHeight = std::min(remaining, static_cast<float>(texture.height));
+        Rectangle source{0, 0, static_cast<float>(texture.width), sliceHeight};
+        DrawTextureRec(texture, source, Vector2{x, drawY}, WHITE);
+        drawY += sliceHeight;
+        remaining -= sliceHeight;
+    }
+}
 }  // namespace
 
 GameRenderer::GameRenderer(const SpriteManager& sprites, const ParallaxBackground& bg, const Font& font)
@@ -37,34 +50,29 @@ void GameRenderer::drawCenteredText(const std::string& text, int y, int fontSize
 void GameRenderer::drawBackground(int screenWidth, int screenHeight) const {
     DrawRectangleGradientV(0, 0, screenWidth, static_cast<int>(Config::kGroundY), kSkyTop, kSkyBottom);
     bg_.draw(screenWidth, static_cast<int>(Config::kGroundY));
-
-    DrawRectangle(0, static_cast<int>(Config::kGroundY), screenWidth, screenHeight - static_cast<int>(Config::kGroundY),
-                  Color{222, 195, 108, 255});
-    DrawRectangle(0, static_cast<int>(Config::kGroundY), screenWidth, 7, Color{115, 184, 65, 255});
-    for (int x = -20; x < screenWidth; x += 34) DrawRectangle(x, 451, 19, 7, Color{198, 167, 87, 255});
+    (void)screenHeight;
 }
 
 void GameRenderer::drawPipes(const GameLogic& logic) const {
     if (sprites_.isLoaded()) {
         const auto& pipes = logic.getPipeManager().getPipes();
         float currentGap = logic.getPipeManager().getCurrentGap();
-        Texture2D bodyTex = sprites_.getPipeBodySprite();
-        Texture2D lipTex = sprites_.getPipeLipSprite();
+        Texture2D topBodyTex = sprites_.getTopPipeBodySprite();
+        Texture2D topLipTex = sprites_.getTopPipeLipSprite();
+        Texture2D bottomBodyTex = sprites_.getBottomPipeBodySprite();
+        Texture2D bottomLipTex = sprites_.getBottomPipeLipSprite();
         for (const auto& pipe : pipes) {
-            float gapTop = pipe.gapCenter - currentGap / 2.0F;
-            float gapBottom = pipe.gapCenter + currentGap / 2.0F;
+            const float pipeX = std::round(pipe.x);
+            const float gapTop = std::round(pipe.gapCenter - currentGap / 2.0F);
+            const float gapBottom = std::round(pipe.gapCenter + currentGap / 2.0F);
+            const float lipHeight = static_cast<float>(topLipTex.height);
 
-            Rectangle topBodySrc{0, 0, static_cast<float>(bodyTex.width), gapTop - 14.0F};
-            Rectangle topBodyDst{pipe.x, 0.0F, Config::kPipeWidth, gapTop - 14.0F};
-            DrawTexturePro(bodyTex, topBodySrc, topBodyDst, Vector2{0, 0}, 0.0F, WHITE);
+            drawTiledPipeBody(topBodyTex, pipeX, 0.0F, gapTop - lipHeight);
 
-            Rectangle bottomBodySrc{0, 0, static_cast<float>(bodyTex.width), Config::kGroundY - gapBottom - 14.0F};
-            Rectangle bottomBodyDst{pipe.x, gapBottom + 14.0F, Config::kPipeWidth,
-                                    Config::kGroundY - gapBottom - 14.0F};
-            DrawTexturePro(bodyTex, bottomBodySrc, bottomBodyDst, Vector2{0, 0}, 0.0F, WHITE);
+            drawTiledPipeBody(bottomBodyTex, pipeX, gapBottom + lipHeight, Config::kGroundY - gapBottom - lipHeight);
 
-            DrawTexture(lipTex, static_cast<int>(pipe.x - 7.0F), static_cast<int>(gapTop - 28.0F), WHITE);
-            DrawTexture(lipTex, static_cast<int>(pipe.x - 7.0F), static_cast<int>(gapBottom), WHITE);
+            DrawTexture(topLipTex, static_cast<int>(pipeX), static_cast<int>(gapTop - lipHeight), WHITE);
+            DrawTexture(bottomLipTex, static_cast<int>(pipeX), static_cast<int>(gapBottom), WHITE);
         }
     } else {
         logic.getPipeManager().drawAll(Config::kPipeWidth, Config::kPipeGap, Config::kGroundY, kPipeGreen, kPipeLight,
@@ -75,6 +83,7 @@ void GameRenderer::drawPipes(const GameLogic& logic) const {
 void GameRenderer::drawGameWorld(const GameLogic& logic, int screenWidth, int screenHeight) const {
     drawBackground(screenWidth, screenHeight);
     drawPipes(logic);
+    bg_.drawGround(screenWidth, screenHeight, static_cast<int>(Config::kGroundY));
     drawBird(logic);
     drawParticles(logic);
 
@@ -87,8 +96,16 @@ void GameRenderer::drawGameWorld(const GameLogic& logic, int screenWidth, int sc
 void GameRenderer::drawBird(const GameLogic& logic) const {
     const auto& bird = logic.getBird();
     if (sprites_.isLoaded()) {
-        Vector2 pos{Config::kBirdX - 24.0F, bird.getY() - 24.0F};
-        DrawTextureEx(sprites_.getBirdSprite(), pos, bird.getRotation(), 1.0F, WHITE);
+        constexpr double wingFrameSeconds = 0.11;
+        const bool wingsUp = static_cast<int>(GetTime() / wingFrameSeconds) % 2 != 0;
+        Texture2D birdTex = sprites_.getBirdSprite(wingsUp);
+        Rectangle source{0, 0, static_cast<float>(birdTex.width), static_cast<float>(birdTex.height)};
+        const float birdWidth = static_cast<float>(birdTex.width);
+        const float birdHeight = static_cast<float>(birdTex.height);
+        Rectangle destination{Config::kBirdX - birdWidth / 2.0F, bird.getY() - birdHeight / 2.0F, birdWidth,
+                              birdHeight};
+        DrawTexturePro(birdTex, source, destination, Vector2{birdWidth / 2.0F, birdHeight / 2.0F}, bird.getRotation(),
+                       WHITE);
     } else {
         bird.draw();
     }
