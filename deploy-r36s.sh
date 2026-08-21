@@ -97,7 +97,7 @@ LOG="/opt/r36s-app/r36s-flappy.log"
 
 mkdir -p "$(dirname "$LOG")"
 printf '\n===== r36s-flappy started: %s =====\n' "$(date)" >> "$LOG"
-exec env R36S_FULLSCREEN=1 R36S_APP_DIR=/opt/r36s-app "$APP" >> "$LOG" 2>&1
+exec env R36S_FULLSCREEN=1 R36S_APP_DIR=/opt/r36s-app R36S_DATA_DIR=/opt/r36s-app/data "$APP" >> "$LOG" 2>&1
 EOF
     scp "${SSH_OPTIONS[@]}" -P "$R36S_PORT" "$LAUNCHER_FILE" "$SSH_TARGET:$PORT_DIR/r36s-flappy.sh"
     ssh "${SSH_OPTIONS[@]}" -p "$R36S_PORT" "$SSH_TARGET" "chmod +x '$PORT_DIR/r36s-flappy.sh'"

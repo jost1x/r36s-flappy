@@ -20,11 +20,21 @@ bool parseBoolSetting(const std::string& value, bool& output) {
 }
 }  // namespace
 
-std::string GameSettings::settingsPath() {
+std::string GameSettings::settingsPath() { return (std::filesystem::path(dataDirectory()) / "settings.ini").string(); }
+
+std::string GameSettings::dataDirectory() {
+    const char* r36sDataDir = std::getenv("R36S_DATA_DIR");
+    if (r36sDataDir != nullptr && r36sDataDir[0] != '\0') return r36sDataDir;
+
+    const char* appDir = std::getenv("R36S_APP_DIR");
+    if (appDir != nullptr && appDir[0] != '\0') {
+        return (std::filesystem::path(appDir) / "data").string();
+    }
+
     const char* dataHome = std::getenv("XDG_DATA_HOME");
     const char* home = std::getenv("HOME");
     const std::filesystem::path base = dataHome ? dataHome : (home ? std::string(home) + "/.local/share" : ".");
-    return (base / "r36s-flappy" / "settings.ini").string();
+    return (base / "r36s-flappy").string();
 }
 
 GameSettings GameSettings::load() {
@@ -75,6 +85,10 @@ void GameSettings::save() const {
     std::string path = settingsPath();
     std::error_code error;
     std::filesystem::create_directories(std::filesystem::path(path).parent_path(), error);
+    if (error) {
+        std::cerr << "Warning: Could not create settings directory for " << path << ": " << error.message() << "\n";
+        return;
+    }
 
     std::ofstream file(path, std::ios::trunc);
     if (!file) {

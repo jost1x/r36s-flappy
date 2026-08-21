@@ -176,6 +176,7 @@ void App::adjustSelectedOption(float direction) {
     } else if (menuSelection_ == 3) {
         settings_.showFPS = !settings_.showFPS;
     }
+    settings_.save();
 }
 
 UiAction App::handleMenuInput() {
@@ -252,6 +253,11 @@ void App::handleFlap() {
 
 void App::handleCollision() {
     game_.setState(GameState::GameOver);
+    const int score = game_.getPipeManager().getScore();
+    if (score > bestScore_) {
+        bestScore_ = score;
+        saveBestScore();
+    }
     game_.setCollisionFlash(0.3F);
     soundMgr_.playHit();
     triggerCollisionVibration();
@@ -322,10 +328,7 @@ void App::applySettings() {
 }
 
 void App::loadBestScore() {
-    const char* dataHome = std::getenv("XDG_DATA_HOME");
-    const char* home = std::getenv("HOME");
-    const std::filesystem::path base = dataHome ? dataHome : (home ? std::string(home) + "/.local/share" : ".");
-    scorePath_ = (base / "r36s-flappy" / "high-score.txt").string();
+    scorePath_ = (std::filesystem::path(GameSettings::dataDirectory()) / "high-score.txt").string();
     std::ifstream file(scorePath_);
     if (file) file >> bestScore_;
 }
@@ -334,6 +337,14 @@ void App::saveBestScore() const {
     if (scorePath_.empty()) return;
     std::error_code error;
     std::filesystem::create_directories(std::filesystem::path(scorePath_).parent_path(), error);
+    if (error) {
+        std::cerr << "Warning: Could not create score directory for " << scorePath_ << ": " << error.message() << "\n";
+        return;
+    }
     std::ofstream file(scorePath_, std::ios::trunc);
-    if (file) file << bestScore_ << '\n';
+    if (!file) {
+        std::cerr << "Warning: Could not save score to " << scorePath_ << "\n";
+        return;
+    }
+    file << bestScore_ << '\n';
 }

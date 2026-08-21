@@ -11,6 +11,7 @@ struct GameSettings {
 
     static GameSettings load();
     static GameSettings loadFromPath(const std::string& path);
+    static std::string dataDirectory();
     void save() const;
 
    private:
