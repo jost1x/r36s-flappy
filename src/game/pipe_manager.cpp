@@ -28,7 +28,8 @@ void PipeManager::reset() {
     level_ = 0;
     for (size_t i = 0; i < pipes_.size(); ++i) {
         pipes_[i] = {kInitialPipeX + static_cast<float>(i) * pipeSpacing_,
-                     static_cast<float>(kMinGapCenter + (std::rand() % (kMaxGapCenter - kMinGapCenter + 1))), false};
+                     static_cast<float>(kMinGapCenter + (std::rand() % (kMaxGapCenter - kMinGapCenter + 1))),
+                     getCurrentGap(), false};
     }
 }
 
@@ -57,6 +58,7 @@ void PipeManager::recyclePipe(Pipe& pipe) {
     for (const auto& other : pipes_) farthestX = std::max(farthestX, other.x);
     pipe.x = std::max(farthestX + pipeSpacing_, kScreenWidth + kPipeWidth);
     pipe.gapCenter = static_cast<float>(kMinGapCenter + (std::rand() % (kMaxGapCenter - kMinGapCenter + 1)));
+    pipe.gap = getCurrentGap();
     pipe.scored = false;
 }
 
@@ -64,10 +66,9 @@ bool PipeManager::checkCollision(float birdX, float birdRadius, float birdY, flo
                                  float groundY) const {
     (void)pipeGap;
     (void)groundY;
-    float currentGap = getCurrentGap();
     for (const auto& pipe : pipes_) {
-        float gapTop = pipe.gapCenter - currentGap / 2.0F;
-        float gapBottom = pipe.gapCenter + currentGap / 2.0F;
+        float gapTop = pipe.gapCenter - pipe.gap / 2.0F;
+        float gapBottom = pipe.gapCenter + pipe.gap / 2.0F;
         bool overlapsPipe = birdX + birdRadius > pipe.x && birdX - birdRadius < pipe.x + pipeWidth;
         if (overlapsPipe && (birdY - birdRadius < gapTop || birdY + birdRadius > gapBottom)) {
             return true;
@@ -79,10 +80,9 @@ bool PipeManager::checkCollision(float birdX, float birdRadius, float birdY, flo
 void PipeManager::drawAll(float pipeWidth, float pipeGap, float groundY, Color pipeGreen, Color pipeLight,
                           Color pipeDark) const {
     (void)pipeGap;
-    float currentGap = getCurrentGap();
     for (const auto& pipe : pipes_) {
-        float gapTop = pipe.gapCenter - currentGap / 2.0F;
-        float gapBottom = pipe.gapCenter + currentGap / 2.0F;
+        float gapTop = pipe.gapCenter - pipe.gap / 2.0F;
+        float gapBottom = pipe.gapCenter + pipe.gap / 2.0F;
         Rectangle topBody{pipe.x, 0.0F, pipeWidth, gapTop - 14.0F};
         Rectangle bottomBody{pipe.x, gapBottom + 14.0F, pipeWidth, groundY - gapBottom - 14.0F};
         Rectangle topLip{pipe.x - 7.0F, gapTop - 28.0F, pipeWidth + 14.0F, 28.0F};

@@ -56,15 +56,14 @@ void GameRenderer::drawBackground(int screenWidth, int screenHeight) const {
 void GameRenderer::drawPipes(const GameLogic& logic) const {
     if (sprites_.isLoaded()) {
         const auto& pipes = logic.getPipeManager().getPipes();
-        float currentGap = logic.getPipeManager().getCurrentGap();
         Texture2D topBodyTex = sprites_.getTopPipeBodySprite();
         Texture2D topLipTex = sprites_.getTopPipeLipSprite();
         Texture2D bottomBodyTex = sprites_.getBottomPipeBodySprite();
         Texture2D bottomLipTex = sprites_.getBottomPipeLipSprite();
         for (const auto& pipe : pipes) {
             const float pipeX = std::round(pipe.x);
-            const float gapTop = std::round(pipe.gapCenter - currentGap / 2.0F);
-            const float gapBottom = std::round(pipe.gapCenter + currentGap / 2.0F);
+            const float gapTop = std::round(pipe.gapCenter - pipe.gap / 2.0F);
+            const float gapBottom = std::round(pipe.gapCenter + pipe.gap / 2.0F);
             const float lipHeight = static_cast<float>(topLipTex.height);
 
             drawTiledPipeBody(topBodyTex, pipeX, 0.0F, gapTop - lipHeight);
