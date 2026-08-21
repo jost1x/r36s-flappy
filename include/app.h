@@ -52,5 +52,7 @@ class App {
 
     int bestScore_ = 0;
     int menuSelection_ = 0;
+    std::string statusMessage_;
+    float statusMessageTime_ = 0.0F;
     std::string scorePath_;
 };

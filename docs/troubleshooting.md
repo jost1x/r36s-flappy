@@ -13,6 +13,8 @@ sudo apt install libsdl2-dev libwayland-dev libxkbcommon-dev libegl1-mesa-dev
 
 Revisa `/opt/r36s-app/r36s-flappy.log` después de abrir el port para consultar cualquier error de inicio. La versión ARM64 usa DRM/KMS directamente; vuelve a compilar y desplegar con `make r36s && make deploy` después de cambiar el backend.
 
+Para diagnosticar un mapeo de mando incorrecto, añade `R36S_INPUT_DEBUG=1` al entorno del lanzador. El juego registrará los códigos raw de `/dev/input/event*`; quita la variable después de identificar el botón para evitar logs extensos.
+
 Si el binario no arranca, verifica que Docker esté usando la plataforma correcta:
 ```sh
 docker buildx build --platform linux/arm64 ...

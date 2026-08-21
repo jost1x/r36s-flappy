@@ -1,5 +1,7 @@
 #include "app.h"
 
+#include "menu_input.h"
+
 #ifdef EMBEDDED_ASSETS
 #include "embedded_assets.h"
 #endif
@@ -40,32 +42,46 @@ void App::run() {
     input_.update();
     if (input_.hasGamepad()) {
         std::cerr << "Gamepad detected: " << GetGamepadName(input_.gamepadIndex()) << "\n";
+    } else if (input_.hasController()) {
+        std::cerr << "Raw controller fallback detected\n";
     } else {
         std::cerr << "No gamepad detected, using keyboard/mouse only\n";
+        statusMessage_ = "SIN MANDO: CONECTA UN CONTROLADOR";
+        statusMessageTime_ = 5.0F;
     }
     loadBestScore();
     game_.resetRound();
 
     transition_.start(ScreenTransition::Type::FadeIn, 0.8F);
-    soundMgr_.initialize();
+    if (!soundMgr_.initialize()) {
+        std::cerr << "Warning: SFX audio could not initialize\n";
+        statusMessage_ = "AUDIO SFX NO DISPONIBLE";
+        statusMessageTime_ = 5.0F;
+    }
     soundMgr_.setVolume(settings_.sfxVolume);
     bgm_.setVolume(settings_.bgmVolume);
-    bgm_.start();
+    if (!bgm_.start() && statusMessage_.empty()) {
+        std::cerr << "Warning: BGM audio could not initialize\n";
+        statusMessage_ = "MUSICA NO DISPONIBLE";
+        statusMessageTime_ = 5.0F;
+    }
 
     GameRenderer gameRenderer{spriteMgr_, bg_, font_};
     UiRenderer uiRenderer{font_};
 
     while (!WindowShouldClose()) {
         input_.update();
-        if (input_.isQuitPressed()) {
+        const InputActions& actions = input_.actions();
+        if (actions.quit) {
             break;
         }
-        if (input_.isMutePressed()) {
+        if (actions.mute) {
             soundMgr_.toggleMute();
             bgm_.setMuted(soundMgr_.isMuted());
         }
         transition_.update(GetFrameTime());
         bgm_.update();
+        statusMessageTime_ = std::max(0.0F, statusMessageTime_ - GetFrameTime());
 
         UiAction uiAction = handleInput();
         if (uiAction != UiAction::None) {
@@ -102,6 +118,10 @@ void App::run() {
         }
 
         transition_.drawOverlay();
+        if (statusMessageTime_ > 0.0F) {
+            DrawRectangle(0, 38, Config::kScreenWidth, 26, Fade(BLACK, 0.55F));
+            DrawText(statusMessage_.c_str(), 12, 43, 16, RAYWHITE);
+        }
         gameRenderer.drawFPS(settings_.showFPS, Config::kScreenWidth, Config::kScreenHeight);
         EndDrawing();
     }
@@ -117,14 +137,16 @@ void App::run() {
 }
 
 UiAction App::handleInput() {
+    const InputActions& actions = input_.actions();
     if (game_.getState() != GameState::Playing) return handleMenuInput();
 
     // Playing state - check gamepad/keyboard input
-    if (input_.isPausePressed()) {
+    if (actions.pause) {
         handlePause();
+        return UiAction::None;
     }
 
-    if (input_.isFlapPressed()) {
+    if (actions.flap) {
         handleFlap();
     }
 
@@ -136,7 +158,7 @@ UiAction App::handleInput() {
 }
 
 void App::moveMenuSelection(int itemCount, int direction) {
-    menuSelection_ = (menuSelection_ + direction + itemCount) % itemCount;
+    menuSelection_ = wrapMenuSelection(menuSelection_, itemCount, direction);
 }
 
 void App::adjustSelectedOption(float direction) {
@@ -156,31 +178,20 @@ void App::adjustSelectedOption(float direction) {
 UiAction App::handleMenuInput() {
     const GameState state = game_.getState();
     const int itemCount = state == GameState::Options ? 5 : (state == GameState::Paused ? 3 : 2);
-    if (input_.isMenuUpPressed()) moveMenuSelection(itemCount, -1);
-    if (input_.isMenuDownPressed()) moveMenuSelection(itemCount, 1);
+    const InputActions& actions = input_.actions();
+    if (actions.up) moveMenuSelection(itemCount, -1);
+    if (actions.down) moveMenuSelection(itemCount, 1);
 
     if (state == GameState::Options) {
-        if (input_.isMenuLeftPressed()) adjustSelectedOption(-1.0F);
-        if (input_.isMenuRightPressed()) adjustSelectedOption(1.0F);
-        if (input_.isConfirmPressed()) {
+        if (actions.left) adjustSelectedOption(-1.0F);
+        if (actions.right) adjustSelectedOption(1.0F);
+        if (actions.confirm) {
             if (menuSelection_ == 4) return UiAction::Back;
             if (menuSelection_ >= 2) adjustSelectedOption(1.0F);
         }
-        if (input_.isBackPressed() || input_.isPausePressed()) return UiAction::Back;
-        return UiAction::None;
+        return resolveMenuAction(state, menuSelection_, actions);
     }
-
-    if (state == GameState::Ready && input_.isOptionsPressed()) return UiAction::Options;
-    if (state == GameState::Paused && (input_.isBackPressed() || input_.isPausePressed())) return UiAction::Continue;
-    if (state == GameState::GameOver && input_.isBackPressed()) return UiAction::Menu;
-    if (!input_.isConfirmPressed()) return UiAction::None;
-
-    if (state == GameState::Ready) return menuSelection_ == 0 ? UiAction::Play : UiAction::Options;
-    if (state == GameState::Paused) {
-        return menuSelection_ == 0 ? UiAction::Continue
-                                   : (menuSelection_ == 1 ? UiAction::Restart : UiAction::ToggleMute);
-    }
-    return menuSelection_ == 0 ? UiAction::Retry : UiAction::Menu;
+    return resolveMenuAction(state, menuSelection_, actions);
 }
 
 void App::handleUiAction(UiAction action) {

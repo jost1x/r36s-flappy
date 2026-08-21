@@ -42,6 +42,7 @@ set(APP_SOURCES
     src/main.cpp
     src/app.cpp
     src/input_handler.cpp
+    src/menu_input.cpp
     src/sprite_manager.cpp
     src/parallax_background.cpp
     src/screen_transition.cpp
@@ -95,7 +96,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(BUILD_TESTING)
-    add_executable(game_tests tests/game_tests.cpp src/game/bird.cpp src/game/pipe_manager.cpp src/game/particle.cpp)
+    add_executable(game_tests tests/game_tests.cpp src/menu_input.cpp src/settings.cpp src/game/bird.cpp src/game/pipe_manager.cpp src/game/particle.cpp)
     target_include_directories(game_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(game_tests PRIVATE raylib)
     add_test(NAME game_tests COMMAND game_tests)

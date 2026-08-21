@@ -1,13 +1,23 @@
 #include "settings.h"
 
 #include <algorithm>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
 namespace {
-constexpr float kDefaultSfxVolume = 0.3F;
-constexpr float kDefaultBgmVolume = 0.15F;
+bool parseBoolSetting(const std::string& value, bool& output) {
+    if (value == "1") {
+        output = true;
+        return true;
+    }
+    if (value == "0") {
+        output = false;
+        return true;
+    }
+    return false;
+}
 }  // namespace
 
 std::string GameSettings::settingsPath() {
@@ -20,6 +30,11 @@ std::string GameSettings::settingsPath() {
 GameSettings GameSettings::load() {
     GameSettings settings;
     std::string path = settingsPath();
+    return loadFromPath(path);
+}
+
+GameSettings GameSettings::loadFromPath(const std::string& path) {
+    GameSettings settings;
     std::ifstream file(path);
     if (!file) return settings;
 
@@ -31,16 +46,24 @@ GameSettings GameSettings::load() {
         std::string key = line.substr(0, eq);
         std::string value = line.substr(eq + 1);
 
-        if (key == "sfx_volume")
-            settings.sfxVolume = std::stof(value);
-        else if (key == "bgm_volume")
-            settings.bgmVolume = std::stof(value);
-        else if (key == "vibration")
-            settings.vibrationEnabled = (value == "1");
-        else if (key == "fullscreen")
-            settings.fullscreen = (value == "1");
-        else if (key == "show_fps")
-            settings.showFPS = (value == "1");
+        if (key == "sfx_volume" || key == "bgm_volume") {
+            try {
+                float parsed = std::stof(value);
+                if (key == "sfx_volume")
+                    settings.sfxVolume = parsed;
+                else
+                    settings.bgmVolume = parsed;
+            } catch (const std::exception&) {
+                std::cerr << "Warning: Ignoring invalid " << key << " in " << path << "\n";
+            }
+        } else if (key == "vibration" || key == "fullscreen" || key == "show_fps") {
+            bool* target = key == "vibration"    ? &settings.vibrationEnabled
+                           : key == "fullscreen" ? &settings.fullscreen
+                                                 : &settings.showFPS;
+            if (!parseBoolSetting(value, *target)) {
+                std::cerr << "Warning: Ignoring invalid " << key << " in " << path << "\n";
+            }
+        }
     }
 
     settings.sfxVolume = std::clamp(settings.sfxVolume, 0.0F, 1.0F);

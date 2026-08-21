@@ -15,7 +15,7 @@ void BgmManager::shutdown() {
     }
 }
 
-void BgmManager::start() {
+bool BgmManager::start() {
     if (!initialized_ && IsAudioDeviceReady()) {
         bgmSound_ = generateBgmLoop(1.0F);
         initialized_ = true;
@@ -25,6 +25,7 @@ void BgmManager::start() {
         SetSoundVolume(bgmSound_, muted_ ? 0.0F : volume_);
         playing_ = true;
     }
+    return initialized_;
 }
 
 void BgmManager::update() {

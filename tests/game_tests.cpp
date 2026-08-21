@@ -1,10 +1,14 @@
 #include <cassert>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 
 #include "game/bird.h"
 #include "game/particle.h"
 #include "game/pipe_manager.h"
+#include "menu_input.h"
+#include "settings.h"
 
 void testBirdReset() {
     Bird bird(100.0F, 200.0F, 15.0F);
@@ -225,6 +229,49 @@ void testParticleLifetime() {
     std::cout << "testParticleLifetime passed\n";
 }
 
+void testMenuActions() {
+    InputActions noController{};
+    assert(resolveMenuAction(GameState::Ready, 0, noController) == UiAction::None);
+    assert(wrapMenuSelection(0, 2, -1) == 1);
+    assert(wrapMenuSelection(1, 2, 1) == 0);
+
+    InputActions confirm{};
+    confirm.confirm = true;
+    assert(resolveMenuAction(GameState::Ready, 0, confirm) == UiAction::Play);
+    assert(resolveMenuAction(GameState::Ready, 1, confirm) == UiAction::Options);
+    assert(resolveMenuAction(GameState::Paused, 1, confirm) == UiAction::Restart);
+
+    InputActions back{};
+    back.back = true;
+    assert(resolveMenuAction(GameState::Options, 0, back) == UiAction::Back);
+    assert(resolveMenuAction(GameState::GameOver, 0, back) == UiAction::Menu);
+
+    InputActions pause{};
+    pause.pause = true;
+    assert(resolveMenuAction(GameState::Paused, 0, pause) == UiAction::Continue);
+    std::cout << "testMenuActions passed\n";
+}
+
+void testSettingsLoad() {
+    const std::filesystem::path path = std::filesystem::temp_directory_path() / "r36s-flappy-settings-test.ini";
+    std::filesystem::remove(path);
+    GameSettings missing = GameSettings::loadFromPath(path.string());
+    assert(std::abs(missing.sfxVolume - 0.3F) < 0.01F);
+
+    {
+        std::ofstream file(path);
+        file << "sfx_volume=bad\n";
+        file << "bgm_volume=2.5\n";
+        file << "vibration=invalid\n";
+    }
+    GameSettings corrupt = GameSettings::loadFromPath(path.string());
+    assert(std::abs(corrupt.sfxVolume - 0.3F) < 0.01F);
+    assert(std::abs(corrupt.bgmVolume - 1.0F) < 0.01F);
+    assert(corrupt.vibrationEnabled);
+    std::filesystem::remove(path);
+    std::cout << "testSettingsLoad passed\n";
+}
+
 int main() {
     testBirdReset();
     testBirdFlap();
@@ -247,6 +294,8 @@ int main() {
     testParticleSystemClear();
     testParticleMaxCapacity();
     testParticleLifetime();
+    testMenuActions();
+    testSettingsLoad();
     std::cout << "All game tests passed\n";
     return 0;
 }

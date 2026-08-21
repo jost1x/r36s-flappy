@@ -10,6 +10,7 @@ struct GameSettings {
     bool showFPS = false;
 
     static GameSettings load();
+    static GameSettings loadFromPath(const std::string& path);
     void save() const;
 
    private:

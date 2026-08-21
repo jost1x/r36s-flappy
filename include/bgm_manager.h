@@ -7,7 +7,7 @@ class BgmManager {
     BgmManager();
     ~BgmManager();
 
-    void start();
+    bool start();
     void stop();
     void update();
     void shutdown();
@@ -15,6 +15,7 @@ class BgmManager {
     void setMuted(bool muted);
     float getVolume() const { return volume_; }
     bool isPlaying() const { return playing_; }
+    bool isInitialized() const { return initialized_; }
     void toggle();
 
    private:
