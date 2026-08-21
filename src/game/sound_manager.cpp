@@ -2,20 +2,24 @@
 
 #include "audio_gen.h"
 
-SoundManager::SoundManager() {
-    if (IsAudioDeviceReady()) {
-        initialized_ = true;
-        flapSound_ = generateTone(880.0F, 0.1F, 0.2F);
-        pointSound_ = generateTone(1200.0F, 0.15F, 0.25F);
-        hitSound_ = generateTone(220.0F, 0.2F, 0.3F);
-    }
+bool SoundManager::initialize() {
+    if (initialized_) return true;
+    if (!IsAudioDeviceReady()) return false;
+    flapSound_ = generateTone(880.0F, 0.1F, 0.2F);
+    pointSound_ = generateTone(1200.0F, 0.15F, 0.25F);
+    hitSound_ = generateTone(220.0F, 0.2F, 0.3F);
+    initialized_ = true;
+    return true;
 }
 
-SoundManager::~SoundManager() {
+SoundManager::~SoundManager() { shutdown(); }
+
+void SoundManager::shutdown() {
     if (initialized_) {
         UnloadSound(flapSound_);
         UnloadSound(pointSound_);
         UnloadSound(hitSound_);
+        initialized_ = false;
     }
 }
 

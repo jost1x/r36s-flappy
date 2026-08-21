@@ -22,7 +22,10 @@ class App {
     void run();
 
    private:
-    UiAction handleInput(const UiRenderer& uiRenderer);
+    UiAction handleInput();
+    UiAction handleMenuInput();
+    void moveMenuSelection(int itemCount, int direction);
+    void adjustSelectedOption(float direction);
     void handleUiAction(UiAction action);
     void handleFlap();
     void handleCollision();
@@ -48,5 +51,6 @@ class App {
     Font font_{};
 
     int bestScore_ = 0;
+    int menuSelection_ = 0;
     std::string scorePath_;
 };

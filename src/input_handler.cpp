@@ -120,6 +120,36 @@ bool InputHandler::isOptionsPressed() const {
     return IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
 }
 
+bool InputHandler::isMenuUpPressed() const {
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_LEFT_FACE_UP);
+}
+
+bool InputHandler::isMenuDownPressed() const {
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_LEFT_FACE_DOWN);
+}
+
+bool InputHandler::isMenuLeftPressed() const {
+    if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_LEFT_FACE_LEFT);
+}
+
+bool InputHandler::isMenuRightPressed() const {
+    if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
+}
+
+bool InputHandler::isConfirmPressed() const {
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+}
+
+bool InputHandler::isBackPressed() const {
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE)) return true;
+    return hasGamepad() && IsGamepadButtonPressed(gamepadIndex_, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT);
+}
+
 bool InputHandler::isFullscreenTogglePressed() const { return IsKeyPressed(KEY_F11); }
 
 #ifdef R36S_DRM

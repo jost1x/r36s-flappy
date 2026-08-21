@@ -4,8 +4,11 @@
 
 class SoundManager {
    public:
-    SoundManager();
+    SoundManager() = default;
     ~SoundManager();
+
+    bool initialize();
+    void shutdown();
 
     void playFlap();
     void playPoint();

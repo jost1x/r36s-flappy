@@ -4,9 +4,6 @@
 #include "embedded_assets.h"
 #endif
 
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -46,16 +43,12 @@ void App::run() {
     } else {
         std::cerr << "No gamepad detected, using keyboard/mouse only\n";
     }
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
-    GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, ColorToInt(kInk));
-    GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, ColorToInt(kInk));
-    GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(Color{255, 226, 80, 255}));
-    GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt(Color{255, 242, 150, 255}));
-    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, ColorToInt(Color{246, 175, 49, 255}));
     loadBestScore();
     game_.resetRound();
 
     transition_.start(ScreenTransition::Type::FadeIn, 0.8F);
+    soundMgr_.initialize();
+    soundMgr_.setVolume(settings_.sfxVolume);
     bgm_.setVolume(settings_.bgmVolume);
     bgm_.start();
 
@@ -69,13 +62,12 @@ void App::run() {
         }
         if (input_.isMutePressed()) {
             soundMgr_.toggleMute();
-        }
-        if (input_.isOptionsPressed() && game_.getState() == GameState::Ready) {
-            game_.setState(GameState::Options);
+            bgm_.setMuted(soundMgr_.isMuted());
         }
         transition_.update(GetFrameTime());
+        bgm_.update();
 
-        UiAction uiAction = handleInput(uiRenderer);
+        UiAction uiAction = handleInput();
         if (uiAction != UiAction::None) {
             handleUiAction(uiAction);
         }
@@ -94,16 +86,16 @@ void App::run() {
 
         switch (game_.getState()) {
             case GameState::Ready:
-                uiRenderer.drawReadyMenu(bestScore_);
+                uiRenderer.drawReadyMenu(bestScore_, menuSelection_);
                 break;
             case GameState::Paused:
-                uiRenderer.drawPauseMenu(false);
+                uiRenderer.drawPauseMenu(soundMgr_.isMuted(), menuSelection_);
                 break;
             case GameState::GameOver:
-                uiRenderer.drawGameOverMenu(game_, bestScore_);
+                uiRenderer.drawGameOverMenu(game_, bestScore_, menuSelection_);
                 break;
             case GameState::Options:
-                uiRenderer.drawOptionsMenu(settings_);
+                uiRenderer.drawOptionsMenu(settings_, menuSelection_);
                 break;
             case GameState::Playing:
                 break;
@@ -118,47 +110,14 @@ void App::run() {
     saveBestScore();
     spriteMgr_.unload();
     unloadFont();
+    bgm_.shutdown();
+    soundMgr_.shutdown();
     CloseAudioDevice();
     CloseWindow();
 }
 
-UiAction App::handleInput(const UiRenderer& uiRenderer) {
-    if (game_.getState() == GameState::Options) {
-        if (input_.isFlapPressed() || input_.isPausePressed()) {
-            return UiAction::Back;
-        }
-        return uiRenderer.drawOptionsMenu(settings_);
-    }
-
-    if (game_.getState() == GameState::Ready) {
-        if (input_.isFlapPressed()) {
-            return UiAction::Play;
-        }
-        if (input_.isOptionsPressed()) {
-            return UiAction::Options;
-        }
-        return uiRenderer.drawReadyMenu(bestScore_);
-    }
-
-    if (game_.getState() == GameState::GameOver) {
-        if (input_.isFlapPressed()) {
-            return UiAction::Retry;
-        }
-        if (input_.isOptionsPressed()) {
-            return UiAction::Menu;
-        }
-        return uiRenderer.drawGameOverMenu(game_, bestScore_);
-    }
-
-    if (game_.getState() == GameState::Paused) {
-        if (input_.isPausePressed()) {
-            return UiAction::Continue;
-        }
-        if (input_.isFlapPressed()) {
-            return UiAction::Restart;
-        }
-        return uiRenderer.drawPauseMenu(false);
-    }
+UiAction App::handleInput() {
+    if (game_.getState() != GameState::Playing) return handleMenuInput();
 
     // Playing state - check gamepad/keyboard input
     if (input_.isPausePressed()) {
@@ -176,39 +135,95 @@ UiAction App::handleInput(const UiRenderer& uiRenderer) {
     return UiAction::None;
 }
 
+void App::moveMenuSelection(int itemCount, int direction) {
+    menuSelection_ = (menuSelection_ + direction + itemCount) % itemCount;
+}
+
+void App::adjustSelectedOption(float direction) {
+    if (menuSelection_ == 0) {
+        settings_.sfxVolume = std::clamp(settings_.sfxVolume + direction * 0.05F, 0.0F, 1.0F);
+        soundMgr_.setVolume(settings_.sfxVolume);
+    } else if (menuSelection_ == 1) {
+        settings_.bgmVolume = std::clamp(settings_.bgmVolume + direction * 0.05F, 0.0F, 1.0F);
+        bgm_.setVolume(settings_.bgmVolume);
+    } else if (menuSelection_ == 2) {
+        settings_.vibrationEnabled = !settings_.vibrationEnabled;
+    } else if (menuSelection_ == 3) {
+        settings_.showFPS = !settings_.showFPS;
+    }
+}
+
+UiAction App::handleMenuInput() {
+    const GameState state = game_.getState();
+    const int itemCount = state == GameState::Options ? 5 : (state == GameState::Paused ? 3 : 2);
+    if (input_.isMenuUpPressed()) moveMenuSelection(itemCount, -1);
+    if (input_.isMenuDownPressed()) moveMenuSelection(itemCount, 1);
+
+    if (state == GameState::Options) {
+        if (input_.isMenuLeftPressed()) adjustSelectedOption(-1.0F);
+        if (input_.isMenuRightPressed()) adjustSelectedOption(1.0F);
+        if (input_.isConfirmPressed()) {
+            if (menuSelection_ == 4) return UiAction::Back;
+            if (menuSelection_ >= 2) adjustSelectedOption(1.0F);
+        }
+        if (input_.isBackPressed() || input_.isPausePressed()) return UiAction::Back;
+        return UiAction::None;
+    }
+
+    if (state == GameState::Ready && input_.isOptionsPressed()) return UiAction::Options;
+    if (state == GameState::Paused && (input_.isBackPressed() || input_.isPausePressed())) return UiAction::Continue;
+    if (state == GameState::GameOver && input_.isBackPressed()) return UiAction::Menu;
+    if (!input_.isConfirmPressed()) return UiAction::None;
+
+    if (state == GameState::Ready) return menuSelection_ == 0 ? UiAction::Play : UiAction::Options;
+    if (state == GameState::Paused) {
+        return menuSelection_ == 0 ? UiAction::Continue
+                                   : (menuSelection_ == 1 ? UiAction::Restart : UiAction::ToggleMute);
+    }
+    return menuSelection_ == 0 ? UiAction::Retry : UiAction::Menu;
+}
+
 void App::handleUiAction(UiAction action) {
     switch (action) {
         case UiAction::Play:
+            menuSelection_ = 0;
             game_.resetRound();
             game_.setState(GameState::Playing);
             handleFlap();
             break;
         case UiAction::Options:
+            menuSelection_ = 0;
             game_.setState(GameState::Options);
             break;
         case UiAction::Continue:
+            menuSelection_ = 0;
             game_.setState(GameState::Playing);
             bgm_.start();
             break;
         case UiAction::Restart:
+            menuSelection_ = 0;
             game_.resetRound();
             game_.setState(GameState::Playing);
             handleFlap();
             break;
         case UiAction::Retry:
+            menuSelection_ = 0;
             game_.resetRound();
             game_.setState(GameState::Playing);
             handleFlap();
             break;
         case UiAction::Menu:
+            menuSelection_ = 0;
             game_.resetRound();
             game_.setState(GameState::Ready);
             break;
         case UiAction::ToggleMute:
             soundMgr_.toggleMute();
+            bgm_.setMuted(soundMgr_.isMuted());
             break;
         case UiAction::Back:
             applySettings();
+            menuSelection_ = 0;
             game_.setState(GameState::Ready);
             break;
         case UiAction::None:
@@ -227,6 +242,7 @@ void App::handleCollision() {
     soundMgr_.playHit();
     triggerCollisionVibration();
     bgm_.stop();
+    menuSelection_ = 0;
 }
 
 void App::handlePause() {
@@ -286,7 +302,10 @@ void App::triggerCollisionVibration() const {
     }
 }
 
-void App::applySettings() { bgm_.setVolume(settings_.bgmVolume); }
+void App::applySettings() {
+    soundMgr_.setVolume(settings_.sfxVolume);
+    bgm_.setVolume(settings_.bgmVolume);
+}
 
 void App::loadBestScore() {
     const char* dataHome = std::getenv("XDG_DATA_HOME");

@@ -12,10 +12,10 @@ class UiRenderer {
    public:
     UiRenderer(const Font& font);
 
-    UiAction drawReadyMenu(int bestScore) const;
-    UiAction drawPauseMenu(bool muted) const;
-    UiAction drawGameOverMenu(const GameLogic& logic, int bestScore) const;
-    UiAction drawOptionsMenu(GameSettings& settings) const;
+    void drawReadyMenu(int bestScore, int selection) const;
+    void drawPauseMenu(bool muted, int selection) const;
+    void drawGameOverMenu(const GameLogic& logic, int bestScore, int selection) const;
+    void drawOptionsMenu(const GameSettings& settings, int selection) const;
 
     const char* getMedal(const GameLogic& logic) const;
     Color getMedalColor(const GameLogic& logic) const;
@@ -26,4 +26,5 @@ class UiRenderer {
 
     void drawText(const std::string& text, int x, int y, int fontSize, Color color) const;
     void drawCenteredText(const std::string& text, int y, int fontSize, Color color) const;
+    void drawMenuItem(const char* text, Rectangle bounds, bool selected) const;
 };

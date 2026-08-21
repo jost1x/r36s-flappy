@@ -61,7 +61,10 @@ src/
 
 | Acción | Teclado | R36S |
 |---|---|---|
-| Volar | Espacio, Enter, ↑, W, clic | A, B, Start, L1, R1 |
+| Volar | Espacio, Enter, ↑, W, clic | A, B, L1, R1 |
+| Navegar menús | Flechas, W/S | Cruceta |
+| Confirmar / volver | Enter/Espacio / Escape | A / B |
+| Opciones | O | Select |
 | Pausar | P | Start |
 | Salir | Escape | Select + Start |
 | Silenciar | M | — |

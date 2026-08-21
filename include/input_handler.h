@@ -20,6 +20,12 @@ class InputHandler {
     bool isMutePressed() const;
     bool isPausePressed() const;
     bool isOptionsPressed() const;
+    bool isMenuUpPressed() const;
+    bool isMenuDownPressed() const;
+    bool isMenuLeftPressed() const;
+    bool isMenuRightPressed() const;
+    bool isConfirmPressed() const;
+    bool isBackPressed() const;
     bool isFullscreenTogglePressed() const;
 
    private:
