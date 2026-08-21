@@ -41,6 +41,17 @@ make verify    # format + lint + tests
 
 Ver [guía de desarrollo](docs/development.md) para más detalles.
 
+## CI/CD
+
+Los push normales no ejecutan builds de distribución. Añade uno de estos marcadores al mensaje del commit para solicitarlos:
+
+- `(release)` — compila artefactos para PC y R36S.
+- `(release:pc)` o `(release:r36s)` — compila sólo el destino indicado.
+- `(deploy)` — compila ambos destinos y publica una GitHub Release con los binarios.
+- `(deploy:pc)` o `(deploy:r36s)` — publica sólo el destino indicado.
+
+Las pull requests siempre ejecutan formato, lint y tests.
+
 ## Arquitectura
 
 ```

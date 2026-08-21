@@ -30,3 +30,25 @@ make format    # solo clang-format
 make lint      # solo clang-tidy
 make test      # solo tests
 ```
+
+## CI/CD en GitHub Actions
+
+Las pull requests siempre ejecutan formato, lint, compilación de validación y tests. Los push a `main` o `master` no generan binarios de distribución a menos que el mensaje del commit incluya uno de estos marcadores:
+
+| Marcador | Resultado |
+| --- | --- |
+| `(release)` | Genera artifacts para PC y R36S. |
+| `(release:pc)` | Genera sólo el binario de PC. |
+| `(release:r36s)` | Genera sólo el binario ARM64 para R36S. |
+| `(deploy)` | Genera ambos binarios y publica una GitHub Release. |
+| `(deploy:pc)` | Publica una GitHub Release sólo con el binario de PC. |
+| `(deploy:r36s)` | Publica una GitHub Release sólo con el binario de R36S. |
+
+Por ejemplo:
+
+```sh
+git commit -m "feat: tune difficulty (release:r36s)"
+git commit -m "fix: preserve settings on handheld (deploy)"
+```
+
+Los artifacts de `release` se conservan durante 30 días. Un marcador `deploy` crea una release con etiqueta `deploy-<SHA>` y adjunta los binarios solicitados. Esto publica los binarios en GitHub; no reemplaza el despliegue SSH local descrito en la guía de R36S.
